@@ -11,6 +11,10 @@
   <img alt="plataformas" src="https://img.shields.io/badge/macOS%20%C2%B7%20Linux%20%C2%B7%20Windows%20%C2%B7%20WASM-1e2444">
 </p>
 
+<p align="center">
+  <a href="https://jonathansantos.github.io/flatmates/"><b>Página do projeto, com o motor rodando ao vivo →</b></a>
+</p>
+
 <p align="center"><img src="demo/team.png" alt="Equipe em volta de um gráfico" width="880"></p>
 
 <table>

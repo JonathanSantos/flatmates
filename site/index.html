@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flatmates: ilustrações Corporate Memphis a partir de um JSON</title>
+<meta name="description" content="Descreva quem está na cena e como se relacionam. Um motor em Rust com um mundo 3D, uma câmera e um rig cuida de proporção, perspectiva e oclusão.">
+<meta property="og:title" content="Flatmates">
+<meta property="og:description" content="Ilustrações Corporate Memphis a partir de um JSON.">
+<meta property="og:image" content="https://jonathansantos.github.io/flatmates/demo/team.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Instrument+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#hero">Flatmates<i>.</i></a>
+    <nav aria-label="Seções">
+      <a href="#exemplos">Exemplos</a>
+      <a href="#tecnica">Técnica</a>
+      <a href="#editor">Editor</a>
+      <a href="#instalar">Instalar</a>
+      <a class="keep" href="https://github.com/JonathanSantos/flatmates">GitHub ↗</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="hero" id="hero">
+  <div class="wrap">
+    <div class="top">
+      <h1>Descreva a cena. O resto é geometria.</h1>
+      <div class="side">
+        <p class="lede">Flatmates gera ilustrações Corporate Memphis a partir de um JSON. Você diz quem está na cena e como se relacionam; o motor resolve proporção, perspectiva, oclusão e cor.</p>
+        <div class="install">
+          <a class="btn solid" href="#instalar">Baixar</a>
+          <a class="btn" href="#editor">Abrir o editor</a>
+        </div>
+      </div>
+    </div>
+    <div class="stage" aria-label="Cena de escritório gerada ao vivo"><img src="demo/office.png" alt="Escritório em três-quartos" width="1200" height="630"></div>
+    <div class="deck">
+      <label>Girar <input type="range" name="yaw" min="-70" max="70" value="24" aria-label="Girar a câmera"><output>24°</output></label>
+      <label>Subir <input type="range" name="pitch" min="4" max="60" value="16" aria-label="Altura da câmera"><output>16°</output></label>
+      <div class="chips" data-chips="theme" role="group"><button class="chip" type="button" data-value="day" aria-pressed="true"><span>day</span></button><button class="chip" type="button" data-value="pastel" aria-pressed="false"><span>pastel</span></button><button class="chip" type="button" data-value="sunset" aria-pressed="false"><span>sunset</span></button><button class="chip" type="button" data-value="mint" aria-pressed="false"><span>mint</span></button><button class="chip" type="button" data-value="night" aria-pressed="false"><span>night</span></button></div>
+      <label><input type="checkbox" name="rig"> Esqueleto</label>
+      <span class="ms"></span>
+    </div>
+  </div>
+</div>
+
+<section id="exemplos">
+  <div class="wrap">
+    <p class="kicker">exemplos · clique para abrir o JSON</p>
+    <h2>Cada imagem aqui é um arquivo de 10 a 40 linhas.</h2>
+    <p class="lede muted">Nenhuma tem coordenada de pixel. São relações: sentado em, em cima de, ao lado de, olhando para.</p>
+    <div class="gallery"><button class="shot wide" type="button" data-example="team"><img src="demo/team.png" alt="Exemplo team" loading="lazy" width="1200" height="630"><b>team.json</b><em>abrir no editor ↓</em></button><button class="shot " type="button" data-example="night"><img src="demo/night.png" alt="Exemplo night" loading="lazy" width="1200" height="630"><b>night.json</b><em>abrir no editor ↓</em></button><button class="shot " type="button" data-example="custom"><img src="demo/custom.png" alt="Exemplo custom" loading="lazy" width="1200" height="630"><b>custom.json</b><em>abrir no editor ↓</em></button><button class="shot wide" type="button" data-example="isometric"><img src="demo/isometric.png" alt="Exemplo isometric" loading="lazy" width="1200" height="630"><b>isometric.json</b><em>abrir no editor ↓</em></button><button class="shot " type="button" data-example="brand"><img src="demo/brand.png" alt="Exemplo brand" loading="lazy" width="1200" height="630"><b>brand.json</b><em>abrir no editor ↓</em></button><button class="shot " type="button" data-example="remote-work"><img src="demo/remote-work.png" alt="Exemplo remote-work" loading="lazy" width="1200" height="630"><b>remote-work.json</b><em>abrir no editor ↓</em></button><button class="shot " type="button" data-example="lounge"><img src="demo/lounge.png" alt="Exemplo lounge" loading="lazy" width="1200" height="630"><b>lounge.json</b><em>abrir no editor ↓</em></button><button class="shot " type="button" data-example="pets"><img src="demo/pets.png" alt="Exemplo pets" loading="lazy" width="1200" height="630"><b>pets.json</b><em>abrir no editor ↓</em></button><button class="shot " type="button" data-example="office"><img src="demo/office.png" alt="Exemplo office" loading="lazy" width="1200" height="630"><b>office.json</b><em>abrir no editor ↓</em></button></div>
+    <figure class="fig" style="margin-top:14px">
+      <img src="demo/walk.svg" alt="Caminhada, aceno, corrida e salto animados" loading="lazy" width="1200" height="630">
+      <figcaption>Animação exportada com <code>flatmates animate</code>: um único SVG, sem JavaScript.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="tecnica" class="band pastel">
+  <div class="wrap">
+    <p class="kicker">técnica · seis ideias, na ordem em que uma depende da outra</p>
+    <h2 style="max-width:16em">Como um JSON vira um desenho que respeita perspectiva.</h2>
+    <figure class="fig" style="margin:44px 0 clamp(70px,9vw,120px)">
+      <img src="img/pipeline.svg" alt="Fluxo do JSON à imagem" loading="lazy">
+    </figure>
+
+    <article class="chapter">
+      <div class="text">
+        <span class="num">1</span>
+        <h2>Um mundo, uma câmera</h2>
+        <p>O projeto nasceu como rival do <code>nova-svg</code>, que desenhava personagens em 2D numa caixa de 200 × 400, móveis num mini-3D próprio e tinha uma câmera à parte. Cada sistema estava certo sozinho. Os erros de perspectiva apareciam onde eles se encontravam: sentar numa cadeira exigia acertar três sistemas à mão.</p>
+        <p>Aqui tudo vive num mundo em metros e passa pela mesma projeção ortográfica: personagens, móveis, plantas, animais, sombras e o chão. O pé encosta no piso porque é o mesmo ponto no mundo.</p>
+        <p>Não há ponto de fuga, de propósito. O estilo Memphis é chapado, e a projeção ortográfica mantém uma propriedade que o resto do motor usa o tempo todo: <b>uma esfera sempre projeta como um círculo</b>.</p>
+        <table class="facts">
+          <tr><td>front</td><td>giro 0°, altura 9°</td></tr>
+          <tr><td>three-quarter</td><td>giro 26°, altura 17°</td></tr>
+          <tr><td>isometric</td><td>giro 45°, altura 35,264°</td></tr>
+          <tr><td>high</td><td>giro 18°, altura 40°</td></tr>
+          <tr><td>livre</td><td><code>{"yaw": 30, "pitch": 20}</code></td></tr>
+        </table>
+      </div>
+      <div>
+        <figure class="fig"><img src="img/one-camera.svg" alt="De três sistemas para uma câmera" loading="lazy"></figure>
+<pre><span class="c">// A câmera inteira: duas rotações.</span>
+<span class="k">pub fn</span> <span class="n">view</span>(&amp;self, p: V3) -> V3 {
+    p.rot_y(-self.yaw).rot_x(self.pitch)
+}
+<span class="c">// x para a direita, y para cima, z em direção a quem olha.</span>
+<span class="c">// O z não entra no desenho: só decide quem cobre quem.</span></pre>
+        <figure class="fig"><figcaption>Gire a câmera no topo da página: é esta função rodando a cada quadro.</figcaption></figure>
+      </div>
+    </article>
+
+    <article class="chapter flip">
+      <div class="text">
+        <span class="num">2</span>
+        <h2>A pose são quatro metas</h2>
+        <p>Cada personagem é um esqueleto 3D. A pose não guarda ângulos de junta: guarda onde ficam os dois pés e as duas mãos, mais a postura do tronco. Joelhos e cotovelos saem por cinemática inversa de dois ossos, e os ossos nunca mudam de comprimento.</p>
+        <p>Isso torna três coisas a mesma operação. Sentar é pôr o quadril no ponto de assento do móvel. Digitar é pôr as mãos no ponto de uso do laptop. Apontar é esticar o braço na direção do alvo. Em todas, só uma meta se move.</p>
+        <ul>
+          <li><b>Contato com o chão:</b> a altura do tornozelo é calculada a partir do ponto mais baixo da sola, então o pé toca o piso com o calcanhar levantado ou não.</li>
+          <li><b>Linha de gesto:</b> a coluna tem dois trechos e o quadril inclina. Peso numa perna, tronco fora do prumo.</li>
+          <li><b>Assento alto:</b> num banco, os pés ficam pendurados em vez de puxar a coxa até o chão.</li>
+          <li><b>Animação:</b> um movimento é uma lista de poses-chave. Interpolar as metas já dá o ciclo.</li>
+        </ul>
+        <table class="facts">
+          <tr><td>ossos (1,72 m)</td><td>coxa 0,42 · canela 0,41 · tronco 0,50 · braço 0,29 · antebraço 0,26</td></tr>
+          <tr><td>poses</td><td>20, incluindo chão, agachado e encostado</td></tr>
+          <tr><td>movimentos</td><td>walk, run, wave, jump, type</td></tr>
+        </table>
+      </div>
+      <div>
+        <div class="live" id="lab-rig">
+          <div class="stage"><img src="demo/office-rig.png" alt="Esqueleto sobre a cena" loading="lazy"></div>
+          <div class="deck">
+            <div class="chips" data-chips="pose" role="group"><button class="chip" type="button" data-value="walk" aria-pressed="true"><span>walk</span></button><button class="chip" type="button" data-value="run" aria-pressed="false"><span>run</span></button><button class="chip" type="button" data-value="wave" aria-pressed="false"><span>wave</span></button><button class="chip" type="button" data-value="jump" aria-pressed="false"><span>jump</span></button><button class="chip" type="button" data-value="thinking" aria-pressed="false"><span>thinking</span></button><button class="chip" type="button" data-value="pointing" aria-pressed="false"><span>pointing</span></button><button class="chip" type="button" data-value="crouching" aria-pressed="false"><span>crouching</span></button><button class="chip" type="button" data-value="leaning" aria-pressed="false"><span>leaning</span></button></div>
+            <label>Virar <input type="range" name="facing" min="-180" max="180" value="70" aria-label="Para onde o personagem olha"></label>
+            <label><input type="checkbox" name="rig" checked> Esqueleto</label>
+          </div>
+        </div>
+        <figure class="fig"><img src="img/rig-ik.svg" alt="Rig e cinemática inversa" loading="lazy"></figure>
+      </div>
+    </article>
+
+    <article class="chapter">
+      <div class="text">
+        <span class="num">3</span>
+        <h2>Toda forma é um fecho de esferas</h2>
+        <p>Um braço é o fecho convexo de duas esferas, uma no ombro e outra no cotovelo. Como esfera projeta como círculo de qualquer ângulo, a silhueta do braço vale em qualquer câmera, sem um desenho por vista.</p>
+        <p>O contorno sai com arcos de verdade. Cada círculo é amostrado em 48 pontos, o fecho é calculado, e os trechos que pertencem ao mesmo círculo viram um único comando de arco do SVG. Um antebraço são dois arcos e duas retas.</p>
+        <p>O cabelo usa a mesma ideia ao contrário: é uma <b>calota</b> da esfera da cabeça. O motor calcula a parte visível da calota (a borda dela mais o trecho da silhueta que fecha a região), e a linha do cabelo sai certa de frente, de perfil e de costas. Barba, gorro e o rosto do afro são calotas também.</p>
+        <p>Gire as três cabeças ao lado: não existe um desenho de perfil guardado em lugar nenhum.</p>
+      </div>
+      <div>
+        <div class="live" id="lab-head" style="background:var(--pastel)">
+          <div class="stage"><img src="demo/hair-turn.png" alt="A mesma cabeça girando" loading="lazy"></div>
+          <div class="deck">
+            <label>Girar <input type="range" name="facing" min="-180" max="180" value="35" aria-label="Girar os personagens"></label>
+            <div class="chips" data-chips="hair" role="group"><button class="chip" type="button" data-value="bob" aria-pressed="true"><span>bob</span></button><button class="chip" type="button" data-value="short" aria-pressed="false"><span>short</span></button><button class="chip" type="button" data-value="long" aria-pressed="false"><span>long</span></button><button class="chip" type="button" data-value="bun" aria-pressed="false"><span>bun</span></button><button class="chip" type="button" data-value="ponytail" aria-pressed="false"><span>ponytail</span></button><button class="chip" type="button" data-value="afro" aria-pressed="false"><span>afro</span></button><button class="chip" type="button" data-value="curly" aria-pressed="false"><span>curly</span></button><button class="chip" type="button" data-value="bald" aria-pressed="false"><span>bald</span></button></div>
+          </div>
+        </div>
+        <figure class="fig"><img src="img/hull.svg" alt="Formas como fecho de esferas" loading="lazy"></figure>
+      </div>
+    </article>
+
+    <article class="chapter flip">
+      <div class="text">
+        <span class="num">4</span>
+        <h2>A roupa veste o corpo que está por baixo</h2>
+        <p>Um fecho convexo não tem cintura. Por isso o tronco são dois fechos, peito e quadril, que se encontram nela. O biotipo muda ombros, cintura, quadril, peito, barriga e a grossura dos membros, sem mexer na altura dos ossos.</p>
+        <p>Cada roupa tem um <b>caimento</b> de 0 a 1. Em 0 ela soma só uma folga aos raios do corpo e marca a cintura. Em 1 o raio da cintura cresce até alcançar o ponto mais largo, e o pano cai reto. O mesmo corpo veste diferente em cada roupa, e a mesma roupa veste diferente em cada corpo.</p>
+        <table class="facts">
+          <tr><td>tank · dress</td><td>0 · 0,1</td></tr>
+          <tr><td>tshirt · shirt</td><td>0,42 · 0,5</td></tr>
+          <tr><td>blazer · sweater</td><td>0,72 · 0,8</td></tr>
+          <tr><td>hoodie</td><td>1</td></tr>
+        </table>
+        <p>Mangas e barras são tubos com ponta reta: duas esferas pequenas nos cantos da silhueta, em vez de uma ponta redonda. Um teste mede em pixels que a regata marca a cintura e o moletom a esconde.</p>
+      </div>
+      <div>
+        <div class="live" id="lab-cloth" style="background:var(--sunset)">
+          <div class="stage"><img src="demo/builds.png" alt="O mesmo corte em quatro corpos" loading="lazy"></div>
+          <div class="deck">
+            <span>corpo</span><div class="chips" data-chips="build" role="group"><button class="chip" type="button" data-value="slim" aria-pressed="false"><span>slim</span></button><button class="chip" type="button" data-value="regular" aria-pressed="false"><span>regular</span></button><button class="chip" type="button" data-value="curvy" aria-pressed="true"><span>curvy</span></button><button class="chip" type="button" data-value="broad" aria-pressed="false"><span>broad</span></button></div>
+            <span>roupa</span><div class="chips" data-chips="outfit" role="group"><button class="chip" type="button" data-value="tank" aria-pressed="true"><span>tank</span></button><button class="chip" type="button" data-value="tshirt" aria-pressed="false"><span>tshirt</span></button><button class="chip" type="button" data-value="dress" aria-pressed="false"><span>dress</span></button><button class="chip" type="button" data-value="blazer" aria-pressed="false"><span>blazer</span></button><button class="chip" type="button" data-value="sweater" aria-pressed="false"><span>sweater</span></button><button class="chip" type="button" data-value="hoodie" aria-pressed="false"><span>hoodie</span></button></div>
+          </div>
+        </div>
+        <figure class="fig"><img src="img/drape.svg" alt="Caimento da roupa sobre o corpo" loading="lazy"></figure>
+      </div>
+    </article>
+
+    <article class="chapter">
+      <div class="text">
+        <span class="num">5</span>
+        <h2>Quem cobre quem</h2>
+        <p>SVG não tem profundidade: o que é escrito depois fica por cima. Ordenar pela distância do centro de cada peça erra com peças grandes. Uma caneca no fundo de uma mesa está mais longe que o centro do tampo, e sumiria atrás dele.</p>
+        <p>O motor compara cada par de peças que se sobrepõe na tela, testando o contorno convexo e não só a caixa:</p>
+        <ul>
+          <li>Se uma é uma face plana, vale de que lado do plano a outra está.</li>
+          <li>A lateral de um cilindro sabe que fica toda abaixo do próprio tampo.</li>
+          <li>Uma peça que cruza o plano é julgada pelo ponto dela que cai sobre a face.</li>
+          <li>Entre duas formas orgânicas, vale a profundidade, com um empurrão por papel: mão sobre braço, braço sobre tronco.</li>
+        </ul>
+        <p>As restrições formam um grafo, ordenado topologicamente. Quando sobra um ciclo, o motor acha o núcleo dele, corta os tubos no plano que atravessam, divide em quatro as faces grandes e ordena de novo, até quatro vezes. Só se não fechar sai um aviso.</p>
+        <p>O caso que motivou o corte: quem digita tem a mão em cima da mesa e o cotovelo embaixo dela. O antebraço não está nem na frente nem atrás do tampo.</p>
+      </div>
+      <div>
+        <figure class="fig"><img src="img/occlusion.svg" alt="Ordem de pintura por oclusão" loading="lazy"></figure>
+        <figure class="fig"><img src="demo/isometric.png" alt="Escritório isométrico" loading="lazy"><figcaption>De costas, em isométrico: mãos sobre o tampo, pernas sob ele, encosto da cadeira na frente do tronco.</figcaption></figure>
+      </div>
+    </article>
+
+    <article class="chapter flip">
+      <div class="text">
+        <span class="num">6</span>
+        <h2>Acabamento</h2>
+        <p>Técnicas que não mudam o que a cena diz, só como ela lê. Ligue e desligue ao lado.</p>
+        <ul>
+          <li><b>Sombra tonal:</b> a própria forma, deslocada 68% da largura e recortada por ela mesma. Uma faixa mais escura que acompanha o contorno.</li>
+          <li><b>Três tons nos membros:</b> o de lá escurece 14%, o de cá clareia 7%. Um braço na frente do tronco da mesma cor continua legível.</li>
+          <li><b>Névoa de profundidade:</b> quando a cena tem mais de 1,2 m de fundo, cada item puxa até 16% para a cor do fundo conforme a distância.</li>
+          <li><b>Três tons nos móveis:</b> claro em cima, base de frente, escuro na lateral direita. Nunca um degradê.</li>
+          <li><b>Cabeça com queixo:</b> crânio mais mandíbula, para o rosto ter direção de perfil. Franja, brilho no cabelo do lado da luz, bochechas no sorriso.</li>
+          <li><b>Enquadramento:</b> a cena é ajustada à área útil; blobs, formas e confete são montados em volta do grupo e fora do título, que quebra sozinho em até três linhas.</li>
+        </ul>
+        <p>E uma que não se vê: seno, cosseno e arco tangente são calculados só com operações que o IEEE 754 define bit a bit. A mesma cena dá os mesmos bytes em macOS, Linux, Windows e no navegador.</p>
+      </div>
+      <div>
+        <div class="live" id="lab-finish" style="background:var(--mint)">
+          <div class="stage"><img src="demo/office.png" alt="Cena com acabamento" loading="lazy"></div>
+          <div class="deck">
+            <label><input type="checkbox" name="shading" checked> Sombra tonal</label>
+            <label><input type="checkbox" name="haze" checked> Névoa</label>
+            <label><input type="checkbox" name="grain"> Grão</label>
+          </div>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section id="editor">
+  <div class="wrap">
+    <p class="kicker">editor · o motor inteiro roda nesta aba</p>
+    <h2>Mude uma linha e veja.</h2>
+    <p class="lede muted">O núcleo não lê nem grava arquivo, então compila para WebAssembly sem adaptação. Os erros dizem quais valores são aceitos.</p>
+    <div class="editor">
+      <textarea spellcheck="false" aria-label="Cena em JSON"></textarea>
+      <div class="out">
+        <div class="stage"></div>
+        <ul class="notes" aria-live="polite"></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band sunset">
+  <div class="wrap">
+    <p class="kicker">processo · o que foi estudado e medido</p>
+    <h2 style="max-width:15em">O caminho até aqui</h2>
+    <figure class="fig" style="margin-top:40px"><img src="img/studies.svg" alt="Estudos e etapas do projeto" loading="lazy"></figure>
+    <div class="chapter" style="margin-top:46px">
+      <div class="text">
+        <h3>O que a inspeção ampliada achou</h3>
+        <p>As cenas escondiam defeitos que as folhas de inspeção mostraram de cara: os quatro biotipos saíam quase iguais, a cabeça olhava para cima de perfil, o tornozelo aparecia por cima do sapato de costas e a barba cobria o rosto inteiro.</p>
+        <p>Cada um virou uma mudança de modelo, não um ajuste de número: tronco em dois fechos, crânio com mandíbula, ordem do sapato sobre a canela, barba como faixa na mandíbula.</p>
+      </div>
+      <div class="text">
+        <h3>O que ficou travado em teste</h3>
+        <p>Os testes de perspectiva medem pixels, não texto: a caneca aparece sobre a mesa nas quatro câmeras, as pernas somem atrás do sofá, as mãos de quem digita ficam visíveis sobre o tampo, de costas não sobra rosto, a regata marca a cintura.</p>
+        <p>São 60 testes, rodando em macOS, Linux e Windows a cada envio.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="instalar">
+  <div class="wrap">
+    <p class="kicker">instalar · um binário, sem dependências</p>
+    <h2>Baixe e rode.</h2>
+    <div class="downloads"><a href="https://github.com/JonathanSantos/flatmates/releases/latest/download/flatmates-aarch64-apple-darwin.tar.gz"><b>macOS · Apple Silicon</b><span>flatmates-aarch64-apple-darwin.tar.gz</span></a><a href="https://github.com/JonathanSantos/flatmates/releases/latest/download/flatmates-x86_64-apple-darwin.tar.gz"><b>macOS · Intel</b><span>flatmates-x86_64-apple-darwin.tar.gz</span></a><a href="https://github.com/JonathanSantos/flatmates/releases/latest/download/flatmates-x86_64-unknown-linux-gnu.tar.gz"><b>Linux · x64</b><span>flatmates-x86_64-unknown-linux-gnu.tar.gz</span></a><a href="https://github.com/JonathanSantos/flatmates/releases/latest/download/flatmates-aarch64-unknown-linux-gnu.tar.gz"><b>Linux · ARM64</b><span>flatmates-aarch64-unknown-linux-gnu.tar.gz</span></a><a href="https://github.com/JonathanSantos/flatmates/releases/latest/download/flatmates-x86_64-pc-windows-msvc.zip"><b>Windows · x64</b><span>flatmates-x86_64-pc-windows-msvc.zip</span></a><a href="https://github.com/JonathanSantos/flatmates/releases/latest/download/flatmates-aarch64-pc-windows-msvc.zip"><b>Windows · ARM64</b><span>flatmates-aarch64-pc-windows-msvc.zip</span></a><a href="https://github.com/JonathanSantos/flatmates/releases/latest/download/flatmates.wasm"><b>Navegador</b><span>flatmates.wasm</span></a><a href="https://github.com/JonathanSantos/flatmates/releases/latest/download/flatmates-skill.zip"><b>Skill para agentes</b><span>flatmates-skill.zip</span></a></div>
+<pre style="max-width:46em"><span class="c"># um exemplo embutido, direto para PNG</span>
+flatmates example office | flatmates render --png office.png
+
+<span class="c"># onde cada item foi parar, e os avisos, em JSON</span>
+flatmates explain cena.json
+
+<span class="c"># oito variações e dois formatos de uma vez</span>
+flatmates render cena.json --png cena.png --seeds 1..8 --size 1200x630 --size 1080x1080
+
+<span class="c"># SVG animado a partir de "motion"</span>
+flatmates animate cena.json -o cena.svg --frames 12</pre>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Flatmates · motor em Rust · fonte Inter sob SIL OFL 1.1</span>
+    <a href="https://github.com/JonathanSantos/flatmates">github.com/JonathanSantos/flatmates</a>
+  </div>
+</footer>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
