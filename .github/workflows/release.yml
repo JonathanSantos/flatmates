@@ -1,0 +1,112 @@
+name: release
+
+# Uma tag v* publica um release com um binário por plataforma, o núcleo em
+# WebAssembly e a skill já montada com todos os binários.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: x86_64-unknown-linux-gnu, os: ubuntu-22.04 }
+          - { target: aarch64-unknown-linux-gnu, os: ubuntu-22.04, linker: aarch64-linux-gnu-gcc }
+          - { target: x86_64-pc-windows-msvc, os: windows-latest }
+          - { target: aarch64-pc-windows-msvc, os: windows-latest }
+          - { target: aarch64-apple-darwin, os: macos-14 }
+          - { target: x86_64-apple-darwin, os: macos-14 }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rust
+        shell: bash
+        run: rustup toolchain install stable --profile minimal && rustup default stable && rustup target add ${{ matrix.target }}
+      - name: Linker de ARM para Linux
+        if: matrix.linker
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+          echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=${{ matrix.linker }}" >> "$GITHUB_ENV"
+      - name: Compilar
+        run: cargo build --release --locked --target ${{ matrix.target }}
+      - name: Separar o binário
+        shell: bash
+        run: |
+          ext=""
+          [[ "${{ matrix.target }}" == *windows* ]] && ext=".exe"
+          mkdir dist
+          cp "target/${{ matrix.target }}/release/flatmates$ext" "dist/flatmates-${{ matrix.target }}$ext"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bin-${{ matrix.target }}
+          path: dist/*
+          if-no-files-found: error
+
+  wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rust
+        run: rustup toolchain install stable --profile minimal && rustup default stable && rustup target add wasm32-unknown-unknown
+      - name: Compilar
+        run: |
+          cargo build --release --locked --lib --no-default-features --target wasm32-unknown-unknown
+          mkdir dist
+          cp target/wasm32-unknown-unknown/release/flatmates.wasm dist/flatmates.wasm
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bin-wasm
+          path: dist/*
+          if-no-files-found: error
+
+  publish:
+    needs: [build, wasm]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: bin
+          pattern: bin-*
+          merge-multiple: true
+      - name: Montar os pacotes
+        run: |
+          set -euo pipefail
+          mkdir release
+          # Um pacote por plataforma, com o binário chamado só `flatmates`.
+          for f in bin/flatmates-*; do
+            name=$(basename "$f")
+            [[ $name == *.wasm ]] && continue
+            target=${name#flatmates-}; target=${target%.exe}
+            work=$(mktemp -d)
+            if [[ $name == *.exe ]]; then
+              cp "$f" "$work/flatmates.exe"
+              (cd "$work" && zip -q "$GITHUB_WORKSPACE/release/flatmates-$target.zip" flatmates.exe)
+            else
+              cp "$f" "$work/flatmates"
+              chmod +x "$work/flatmates"
+              tar -C "$work" -czf "release/flatmates-$target.tar.gz" flatmates
+            fi
+          done
+          cp bin/flatmates.wasm release/flatmates.wasm
+          # A skill pronta para copiar em .claude/skills, com todos os binários.
+          mkdir -p skill-pack/flatmates/bin
+          cp -R skill/flatmates/. skill-pack/flatmates/
+          for f in bin/flatmates-*; do
+            cp "$f" skill-pack/flatmates/bin/
+          done
+          chmod +x skill-pack/flatmates/bin/* skill-pack/flatmates/scripts/flatmates
+          (cd skill-pack && zip -qr "$GITHUB_WORKSPACE/release/flatmates-skill.zip" flatmates)
+          (cd release && sha256sum * > SHA256SUMS)
+          ls -la release
+      - name: Publicar
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" release/* --title "Flatmates $GITHUB_REF_NAME" --generate-notes

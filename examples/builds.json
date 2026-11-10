@@ -1,0 +1,120 @@
+{
+  "theme": "pastel",
+  "size": [
+    1800,
+    640
+  ],
+  "seed": 5,
+  "title": "O mesmo corte em quatro corpos",
+  "backdrop": {
+    "blob": false,
+    "shapes": false,
+    "confetti": false
+  },
+  "items": [
+    {
+      "kind": "person",
+      "build": "slim",
+      "outfit": "tank",
+      "bottom": "shorts",
+      "top_color": "coral",
+      "skin": "peach",
+      "hair": "bob",
+      "facing": 18,
+      "pose": "standing",
+      "height": 1.72,
+      "face": "smile"
+    },
+    {
+      "kind": "person",
+      "build": "slim",
+      "outfit": "hoodie",
+      "bottom": "pants",
+      "top_color": "violet",
+      "skin": "peach",
+      "hair": "bob",
+      "facing": -22,
+      "pose": "waving",
+      "height": 1.72,
+      "face": "smile"
+    },
+    {
+      "kind": "person",
+      "build": "regular",
+      "outfit": "tank",
+      "bottom": "shorts",
+      "top_color": "coral",
+      "skin": "sky",
+      "hair": "short",
+      "facing": 18,
+      "pose": "standing",
+      "height": 1.72,
+      "face": "smile"
+    },
+    {
+      "kind": "person",
+      "build": "regular",
+      "outfit": "hoodie",
+      "bottom": "pants",
+      "top_color": "violet",
+      "skin": "sky",
+      "hair": "short",
+      "facing": -22,
+      "pose": "waving",
+      "height": 1.72,
+      "face": "smile"
+    },
+    {
+      "kind": "person",
+      "build": "curvy",
+      "outfit": "tank",
+      "bottom": "shorts",
+      "top_color": "coral",
+      "skin": "amber",
+      "hair": "bun",
+      "facing": 18,
+      "pose": "standing",
+      "height": 1.72,
+      "face": "smile"
+    },
+    {
+      "kind": "person",
+      "build": "curvy",
+      "outfit": "hoodie",
+      "bottom": "pants",
+      "top_color": "violet",
+      "skin": "amber",
+      "hair": "bun",
+      "facing": -22,
+      "pose": "waving",
+      "height": 1.72,
+      "face": "smile"
+    },
+    {
+      "kind": "person",
+      "build": "broad",
+      "outfit": "tank",
+      "bottom": "shorts",
+      "top_color": "coral",
+      "skin": "lilac",
+      "hair": "curly",
+      "facing": 18,
+      "pose": "standing",
+      "height": 1.72,
+      "face": "smile"
+    },
+    {
+      "kind": "person",
+      "build": "broad",
+      "outfit": "hoodie",
+      "bottom": "pants",
+      "top_color": "violet",
+      "skin": "lilac",
+      "hair": "curly",
+      "facing": -22,
+      "pose": "waving",
+      "height": 1.72,
+      "face": "smile"
+    }
+  ]
+}

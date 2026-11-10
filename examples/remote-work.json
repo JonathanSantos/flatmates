@@ -1,0 +1,14 @@
+{
+  "theme": "pastel",
+  "seed": 3,
+  "items": [
+    { "id": "sofa", "kind": "sofa", "at": [0.2, 0], "color": "violet" },
+    { "kind": "person", "sits_on": "sofa", "seat": 1, "pose": "holding", "holds": "tablet", "outfit": "shirt", "hair": "bun", "skin": "porcelain", "top_color": "coral", "hair_color": "brown" },
+    { "kind": "cat", "at": [-0.25, 0.75], "facing": 80 },
+    { "kind": "person", "at": [-1.75, 0.35], "pose": "holding", "holds": "phone", "facing": 62, "outfit": "hoodie", "hair": "curly", "skin": "lilac", "top_color": "blue" },
+    { "kind": "card", "at": [1.2, -0.3], "lift": 1.75, "scale": 1.3 },
+    { "kind": "lamp", "at": [1.85, -0.25] },
+    { "kind": "monstera", "at": [-2.7, -0.2], "scale": 1.3 },
+    { "kind": "plant", "at": [2.75, 0.1] }
+  ]
+}

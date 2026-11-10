@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Escolhe o binário certo para esta máquina (macOS e Linux).
+set -euo pipefail
+here="$(cd "$(dirname "$0")/.." && pwd)"
+case "$(uname -s)-$(uname -m)" in
+  Darwin-arm64) t=aarch64-apple-darwin ;;
+  Darwin-x86_64) t=x86_64-apple-darwin ;;
+  Linux-aarch64 | Linux-arm64) t=aarch64-unknown-linux-gnu ;;
+  Linux-x86_64) t=x86_64-unknown-linux-gnu ;;
+  MINGW*-x86_64 | MSYS*-x86_64 | CYGWIN*-x86_64) exec "$here/bin/flatmates-x86_64-pc-windows-msvc.exe" "$@" ;;
+  *) echo "erro: plataforma $(uname -s)-$(uname -m) sem binário do flatmates" >&2; exit 1 ;;
+esac
+bin="$here/bin/flatmates-$t"
+[[ -x $bin ]] || { echo "erro: falta $bin; baixe flatmates-skill.zip do release ou rode scripts/build.sh" >&2; exit 1; }
+exec "$bin" "$@"

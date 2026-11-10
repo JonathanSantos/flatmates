@@ -1,0 +1,16 @@
+{
+  "background": "#fff7ed",
+  "palette": ["#ea580c", "#0f766e", "#facc15", "#7c2d12"],
+  "seed": 11,
+  "title": "As cores da sua marca, o mesmo traço",
+  "cast": {
+    "bia": { "skin": "amber", "hair": "bun", "hair_color": "ink", "outfit": "blazer", "top_color": "#0f766e", "face": "smile" },
+    "leo": { "skin": "porcelain", "hair": "short", "hair_color": "auburn", "outfit": "sweater", "top_color": "#ea580c", "beard": true }
+  },
+  "items": [
+    { "id": "board", "kind": "board", "at": [0, -0.3], "content": "chart" },
+    { "id": "bia", "kind": "person", "who": "bia", "near": { "id": "board", "side": "left", "gap": 0.35 }, "face_to": "board", "pose": "pointing", "points_at": "board" },
+    { "kind": "person", "who": "leo", "near": { "id": "board", "side": "right", "gap": 0.5 }, "face_to": "bia", "look_at": "bia", "pose": "thinking" },
+    { "kind": "plant", "near": { "id": "bia", "side": "left", "gap": 0.5 } }
+  ]
+}

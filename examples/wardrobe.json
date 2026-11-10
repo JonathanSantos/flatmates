@@ -1,0 +1,18 @@
+{
+  "theme": "pastel",
+  "size": [1800, 630],
+  "seed": 2,
+  "backdrop": { "blob": false, "shapes": false, "confetti": false },
+  "items": [
+    { "kind": "person", "facing": 20, "outfit": "tshirt", "hair": "short", "face": "dots" },
+    { "kind": "person", "facing": 40, "outfit": "shirt", "hair": "bob", "bottom": "skirt", "face": "smile" },
+    { "kind": "person", "facing": 75, "outfit": "hoodie", "hair": "curly", "accessories": ["headphones"] },
+    { "kind": "person", "facing": 110, "outfit": "sweater", "hair": "ponytail", "accessories": ["backpack"] },
+    { "kind": "person", "facing": 180, "outfit": "blazer", "hair": "long" },
+    { "kind": "person", "facing": -110, "outfit": "tank", "hair": "bun", "bottom": "shorts" },
+    { "kind": "person", "facing": -75, "outfit": "dress", "hair": "afro" },
+    { "kind": "person", "facing": -40, "outfit": "hoodie", "hair": "bald", "beard": true, "face": "dots", "accessories": ["beanie"], "build": "broad" },
+    { "kind": "person", "facing": -15, "outfit": "tshirt", "hair": "short", "skin": "real", "build": "curvy", "face": "smile" },
+    { "kind": "person", "facing": 0, "outfit": "shirt", "hair": "bob", "skin": "real", "build": "slim", "face": "smile" }
+  ]
+}

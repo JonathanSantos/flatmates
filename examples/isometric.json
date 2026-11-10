@@ -1,0 +1,19 @@
+{
+  "theme": "pastel",
+  "camera": "isometric",
+  "seed": 9,
+  "backdrop": { "confetti": false },
+  "items": [
+    { "id": "desk", "kind": "desk", "at": [0, 0], "facing": 0 },
+    { "id": "laptop", "kind": "laptop", "on": "desk", "at": [0.3, 0.16], "content": "chart" },
+    { "kind": "books", "on": "desk", "at": [-0.45, -0.1] },
+    { "kind": "mug", "on": "desk", "at": [-0.15, 0.2], "color": "coral" },
+    { "id": "chair", "kind": "chair", "at": [0.3, 0.68], "facing": 180, "color": "coral" },
+    { "kind": "person", "sits_on": "chair", "uses": "laptop", "hair": "short", "outfit": "hoodie", "skin": "sky", "top_color": "blue" },
+    { "id": "stool", "kind": "stool", "at": [1.35, 0.2], "color": "yellow" },
+    { "kind": "person", "sits_on": "stool", "facing": -90, "pose": "waving", "hair": "long", "outfit": "tshirt", "bottom": "skirt", "skin": "peach", "top_color": "green", "bottom_color": "violet", "hair_color": "ink" },
+    { "kind": "monstera", "at": [-1.3, -0.5], "scale": 1.15 },
+    { "kind": "box", "at": [-1.1, 0.7] },
+    { "kind": "dog", "at": [1.2, 1.25], "facing": -80 }
+  ]
+}

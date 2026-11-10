@@ -1,0 +1,14 @@
+{
+  "theme": "sunset",
+  "seed": 12,
+  "title": "Pausa para o café",
+  "items": [
+    { "id": "ball", "kind": "ball", "at": [-1.1, 0.1], "color": "blue" },
+    { "kind": "person", "sits_on": "ball", "facing": 70, "pose": "holding", "holds": "mug", "hair": "bob", "outfit": "sweater", "skin": "rose", "top_color": "yellow", "hair_color": "plum" },
+    { "id": "stool", "kind": "stool", "at": [0.55, 0.1], "color": "coral" },
+    { "kind": "person", "sits_on": "stool", "facing": -70, "pose": "waving", "hair": "curly", "outfit": "shirt", "skin": "umber", "top_color": "green", "face": "smile", "beard": true },
+    { "kind": "lamp", "at": [1.6, -0.3] },
+    { "kind": "plant", "at": [-2.6, -0.35], "scale": 1.15 },
+    { "kind": "dog", "at": [-2.0, 0.85], "facing": 80 }
+  ]
+}

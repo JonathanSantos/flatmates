@@ -1,0 +1,43 @@
+{
+  "theme": "sunset",
+  "camera": "three-quarter",
+  "seed": 6,
+  "defs": {
+    "rocket": {
+      "parts": [
+        { "shape": "cylinder", "at": [0, 0.35, 0], "r": 0.26, "h": 1.15, "color": "white" },
+        { "shape": "hull", "points": [[0, 1.5, 0, 0.26], [0, 2.05, 0, 0.04]], "color": "accent" },
+        { "shape": "sphere", "at": [0, 1.15, 0.24], "r": 0.11, "color": "blue" },
+        { "shape": "hull", "points": [[-0.26, 0.75, 0, 0.05], [-0.52, 0.1, 0, 0.05], [-0.26, 0.2, 0, 0.05]], "color": "accent" },
+        { "shape": "hull", "points": [[0.26, 0.75, 0, 0.05], [0.52, 0.1, 0, 0.05], [0.26, 0.2, 0, 0.05]], "color": "accent" },
+        { "shape": "cylinder", "at": [0, 0.12, 0], "r": 0.14, "r_top": 0.2, "h": 0.23, "color": "steel" },
+        { "shape": "chain", "points": [[0, 0.1, 0, 0.1], [0.03, -0.0, 0, 0.07], [0, 0.0, 0, 0.0]], "color": "yellow" }
+      ],
+      "touch": [0.3, 1.1, 0.2],
+      "shadow": [0.5, 0.4]
+    },
+    "bench": {
+      "parts": [
+        { "shape": "box", "at": [0, 0.42, 0], "size": [1.3, 0.07, 0.42], "color": "wood" },
+        { "shape": "box", "at": [-0.52, 0.2, 0], "size": [0.07, 0.4, 0.36], "color": "steel" },
+        { "shape": "box", "at": [0.52, 0.2, 0], "size": [0.07, 0.4, 0.36], "color": "steel" }
+      ],
+      "top": 0.455,
+      "seat": [0.25, 0.455, 0.02],
+      "shadow": [0.7, 0.28]
+    }
+  },
+  "items": [
+    { "id": "rocket", "kind": "rocket", "at": [0, 0], "color": "coral" },
+    { "kind": "person", "near": { "id": "rocket", "side": "right", "gap": -0.05 }, "face_to": "rocket", "uses": "rocket", "look_at": "rocket", "outfit": "hoodie", "hair": "curly", "skin": "sky", "top_color": "violet" },
+    { "id": "bench", "kind": "bench", "at": [-1.75, 0.5], "facing": 35 },
+    { "id": "ana", "kind": "person", "sits_on": "bench", "points_at": "rocket", "look_at": "rocket", "outfit": "tshirt", "hair": "bob", "skin": "peach", "top_color": "green", "face": "smile" },
+    { "id": "crate", "kind": "box", "at": [1.7, 0.6] },
+    { "id": "books", "kind": "books", "on": "crate" },
+    { "kind": "mug", "on": "books", "color": "blue" },
+    { "kind": "custom", "at": [2.3, -0.4], "parts": [
+        { "shape": "cylinder", "at": [0, 0, 0], "r": 0.05, "h": 1.3, "color": "steel" },
+        { "shape": "panel", "at": [0, 1.55, 0], "size": [0.8, 0.5], "content": "code", "color": "accent", "yaw": -20 }
+      ] }
+  ]
+}

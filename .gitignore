@@ -1,0 +1,6 @@
+target
+/out
+web/flatmates.wasm
+skill/flatmates/bin
+.claude
+.DS_Store

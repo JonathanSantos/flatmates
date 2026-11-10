@@ -1,0 +1,11 @@
+{
+  "theme": "mint",
+  "seed": 21,
+  "items": [
+    { "kind": "person", "at": [-0.6, 0], "pose": "walking", "facing": 80, "hair": "ponytail", "outfit": "tank", "bottom": "shorts", "skin": "amber", "top_color": "coral", "bottom_color": "blue", "accessories": ["backpack"] },
+    { "kind": "dog", "at": [0.3, 0.45], "facing": 90 },
+    { "kind": "person", "at": [1.95, -0.1], "pose": "running", "facing": 82, "hair": "short", "outfit": "tshirt", "bottom": "shorts", "skin": "sky", "top_color": "yellow", "accessories": ["headphones"] },
+    { "kind": "cat", "at": [-1.75, 0.3], "facing": 60, "color": "slate" },
+    { "kind": "monstera", "at": [-2.55, -0.3], "scale": 1.2 }
+  ]
+}

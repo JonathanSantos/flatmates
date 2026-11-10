@@ -1,0 +1,16 @@
+{
+  "theme": "night",
+  "camera": "three-quarter",
+  "seed": 8,
+  "title": "Plantão de madrugada",
+  "items": [
+    { "id": "desk", "kind": "desk", "at": [-0.3, 0], "scale": 1.35 },
+    { "id": "laptop", "kind": "laptop", "on": "desk", "at": [-0.15, 0.2], "content": "code" },
+    { "kind": "mug", "on": "desk", "at": [0.4, 0.1], "color": "coral" },
+    { "kind": "lamp", "at": [-1.75, -0.3] },
+    { "kind": "person", "at": [-0.5, 0.74], "facing": 180, "pose": "desk-typing", "uses": "laptop", "look_at": "laptop", "outfit": "hoodie", "hair": "bun", "skin": "lilac", "top_color": "yellow", "accessories": ["headphones"] },
+    { "id": "sitter", "kind": "person", "at": [1.55, 0.7], "pose": "floor-sitting", "facing": -35, "look_at": "cat", "outfit": "sweater", "hair": "afro", "skin": "teal", "top_color": "coral", "face": "smile" },
+    { "id": "cat", "kind": "cat", "near": { "id": "sitter", "side": "left", "gap": 0.35 }, "face_to": "sitter", "color": "cream" },
+    { "kind": "monstera", "at": [1.9, -0.6], "scale": 1.15 }
+  ]
+}

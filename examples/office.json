@@ -1,0 +1,17 @@
+{
+  "theme": "mint",
+  "camera": "three-quarter",
+  "seed": 5,
+  "items": [
+    { "id": "desk", "kind": "desk", "at": [0, 0] },
+    { "id": "laptop", "kind": "laptop", "on": "desk", "at": [-0.25, -0.16], "facing": 180, "content": "code" },
+    { "kind": "mug", "on": "desk", "at": [0.3, 0.12], "color": "coral" },
+    { "kind": "books", "on": "desk", "at": [0.52, -0.16] },
+    { "id": "chair", "kind": "chair", "at": [-0.25, -0.60], "color": "violet" },
+    { "kind": "person", "sits_on": "chair", "uses": "laptop", "hair": "bun", "outfit": "sweater", "skin": "teal", "top_color": "yellow", "hair_color": "brown" },
+    { "kind": "person", "at": [1.45, 0.35], "pose": "presenting", "facing": -75, "hair": "short", "outfit": "blazer", "skin": "lilac", "top_color": "pink", "accessories": ["headphones"] },
+    { "kind": "plant", "at": [-1.45, -0.35], "scale": 1.1 },
+    { "kind": "cat", "at": [1.0, 1.05], "facing": -100 },
+    { "kind": "card", "at": [0.9, -0.5], "lift": 1.9, "scale": 1.2, "content": "chart", "color": "coral" }
+  ]
+}

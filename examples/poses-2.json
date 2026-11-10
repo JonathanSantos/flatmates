@@ -1,0 +1,12 @@
+{"seed":5,"size":[1800,640],"backdrop":{"blob":false,"shapes":false,"confetti":false},
+ "items":[
+  {"kind":"person","pose":"floor-sitting","facing":30,"outfit":"tshirt","hair":"bob"},
+  {"kind":"person","pose":"floor-sitting","facing":-80,"outfit":"hoodie","hair":"short"},
+  {"kind":"person","pose":"lying","facing":90,"outfit":"shirt","hair":"curly"},
+  {"kind":"person","pose":"crouching","facing":70,"outfit":"sweater","hair":"bun"},
+  {"kind":"person","pose":"leaning","facing":20,"outfit":"blazer","hair":"long"},
+  {"kind":"person","pose":"hugging","facing":80,"outfit":"dress","hair":"ponytail"},
+  {"kind":"person","pose":"pointing","facing":50,"outfit":"tshirt","hair":"afro"},
+  {"kind":"person","pose":"celebrating","facing":0,"outfit":"tank","hair":"short","face":"smile"},
+  {"kind":"person","pose":"standing","facing":-30,"outfit":"shirt","hair":"bald","face":"dots"}
+ ]}

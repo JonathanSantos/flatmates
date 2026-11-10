@@ -1,0 +1,13 @@
+{
+  "theme": "day",
+  "seed": 7,
+  "title": "Crescendo juntos",
+  "items": [
+    { "id": "board", "kind": "board", "at": [0, -0.3], "content": "chart", "color": "coral" },
+    { "kind": "person", "at": [-1.75, 0.3], "pose": "walking", "facing": 78, "outfit": "tshirt", "hair": "ponytail", "skin": "lilac", "top_color": "blue" },
+    { "kind": "person", "at": [-0.95, 0.05], "pose": "reaching", "facing": 55, "outfit": "dress", "hair": "long", "skin": "porcelain", "top_color": "coral", "hair_color": "brown" },
+    { "kind": "person", "at": [1.05, 0.15], "pose": "presenting", "facing": -68, "outfit": "blazer", "hair": "short", "skin": "sky", "top_color": "green" },
+    { "kind": "person", "at": [1.8, 0.35], "pose": "celebrating", "facing": -25, "outfit": "hoodie", "hair": "afro", "skin": "peach", "top_color": "violet", "hair_color": "ink", "face": "smile" },
+    { "kind": "monstera", "at": [-2.5, -0.3], "scale": 1.2 }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "theme": "mint",
+  "seed": 14,
+  "backdrop": { "confetti": false },
+  "items": [
+    { "kind": "person", "at": [-1.3, 0], "facing": 80, "motion": "walk", "outfit": "blazer", "hair": "bob", "skin": "rose", "top_color": "blue" },
+    { "kind": "person", "at": [0, 0.1], "facing": 10, "motion": "wave", "outfit": "tshirt", "hair": "curly", "skin": "sky", "top_color": "coral", "face": "smile" },
+    { "kind": "person", "at": [1.3, 0], "facing": 80, "motion": "run", "outfit": "tank", "bottom": "shorts", "hair": "ponytail", "skin": "amber", "top_color": "yellow" },
+    { "kind": "person", "at": [2.6, 0.1], "facing": -20, "motion": "jump", "outfit": "hoodie", "hair": "afro", "skin": "lilac", "top_color": "green" }
+  ]
+}

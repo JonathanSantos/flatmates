@@ -1,0 +1,19 @@
+{
+  "theme": "day",
+  "size": [1800, 630],
+  "seed": 4,
+  "backdrop": { "blob": false, "shapes": false, "confetti": false },
+  "items": [
+    { "kind": "person", "pose": "standing" },
+    { "kind": "person", "pose": "walking" },
+    { "kind": "person", "pose": "running", "facing": 80 },
+    { "kind": "person", "pose": "waving" },
+    { "kind": "person", "pose": "celebrating" },
+    { "kind": "person", "pose": "presenting", "facing": 70 },
+    { "kind": "person", "pose": "thinking" },
+    { "kind": "person", "pose": "holding", "holds": "phone", "facing": -60 },
+    { "kind": "person", "pose": "reaching", "facing": -75 },
+    { "kind": "person", "pose": "carrying", "holds": "box", "facing": -50 },
+    { "kind": "person", "pose": "jumping", "facing": -30 }
+  ]
+}
