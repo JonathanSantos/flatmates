@@ -17,6 +17,8 @@ pub struct SortItem {
     pub outline: Vec<V2>,
     /// Plano (ponto, normal) em espaço de vista acima do qual a peça não existe.
     pub ceiling: Option<(V3, V3)>,
+    /// Planos visíveis do sólido convexo a que a face pertence.
+    pub solid: Vec<(V3, V3)>,
 }
 
 const EPS: f64 = 0.004;
@@ -103,15 +105,25 @@ fn overlap(a: &[f64; 4], b: &[f64; 4]) -> bool {
 }
 
 /// Algum lado de `a` separa os dois polígonos convexos?
+/// Quanto dois contornos podem se encostar sem contar como sobreposição
+/// (metros na tela). Os contornos são aproximados por fora, então um
+/// encosto de raspão não é oclusão de verdade e só criaria restrições falsas.
+const GRAZE: f64 = 0.012;
+
 fn separated_by(a: &[V2], b: &[V2]) -> bool {
     let n = a.len();
     (0..n).any(|i| {
         let (p, q) = (a[i], a[(i + 1) % n]);
         let (nx, ny) = (q.y - p.y, p.x - q.x);
-        let side = |v: &V2| (v.x - p.x) * nx + (v.y - p.y) * ny;
+        let len = (nx * nx + ny * ny).sqrt();
+        if len < 1e-12 {
+            return false;
+        }
+        let side = |v: &V2| ((v.x - p.x) * nx + (v.y - p.y) * ny) / len;
         let inner = a.iter().map(side).fold(0.0_f64, |m, s| if s.abs() > m.abs() { s } else { m });
-        // `b` inteiro do lado oposto ao interior de `a`.
-        b.iter().all(|v| side(v) * inner <= 1e-9)
+        let sign = if inner >= 0.0 { 1.0 } else { -1.0 };
+        // `b` inteiro do lado oposto ao interior de `a`, a menos de um raspão.
+        b.iter().all(|v| side(v) * sign <= GRAZE)
     })
 }
 
@@ -131,6 +143,20 @@ fn before(a: &SortItem, b: &SortItem) -> Option<bool> {
     if !touching(a, b) {
         return None;
     }
+    // Uma face só cobre o que está atrás dela ao longo do raio de visão. Se
+    // todos os pontos de uma peça estão mais perto da câmera que todos os da
+    // outra, a ordem está decidida, não importa de que lado do plano ela fique
+    // (alguém sentado na frente de um encosto mais alto que os ombros).
+    if a.normal.is_some() || b.normal.is_some() {
+        let span = |it: &SortItem| it.pts.iter().fold((f64::MAX, f64::MIN), |(lo, hi), p| (lo.min(p.z), hi.max(p.z)));
+        let ((a_lo, a_hi), (b_lo, b_hi)) = (span(a), span(b));
+        if a_lo > b_hi + EPS {
+            return Some(false);
+        }
+        if b_lo > a_hi + EPS {
+            return Some(true);
+        }
+    }
     // Quem está inteiro acima do teto de uma peça nunca é coberto por ela.
     for (low, high, low_first) in [(a, b, true), (b, a, false)] {
         if let Some((p0, n)) = low.ceiling {
@@ -138,6 +164,24 @@ fn before(a: &SortItem, b: &SortItem) -> Option<bool> {
                 return Some(low_first);
             }
         }
+    }
+    // Face de um sólido convexo contra uma peça solta: a peça está na frente
+    // do sólido se fica do lado de fora de algum plano visível dele. Olhar
+    // só o plano desta face erra quando a peça está abaixo de um tampo mas
+    // na frente da caixa.
+    for (face, loose, face_first) in [(a, b, true), (b, a, false)] {
+        if face.solid.is_empty() || loose.normal.is_some() {
+            continue;
+        }
+        let outside = |p: &V3| face.solid.iter().any(|(q, n)| n.dot(*p - *q) > EPS);
+        let shown = loose.pts.iter().filter(|p| outside(p)).count();
+        if shown == loose.pts.len() {
+            return Some(face_first);
+        }
+        if shown == 0 {
+            return Some(!face_first);
+        }
+        break;
     }
     let (sa, sb) = (side(a, b), side(b, a));
     match (a.normal.is_some(), b.normal.is_some()) {
@@ -247,7 +291,15 @@ mod tests {
     use crate::math::v3;
 
     fn blob(z: f64) -> SortItem {
-        SortItem { pts: vec![v3(0.0, 0.0, z)], normal: None, depth: z, bbox: [-1.0, -1.0, 1.0, 1.0], outline: vec![], ceiling: None }
+        SortItem {
+            pts: vec![v3(0.0, 0.0, z)],
+            normal: None,
+            depth: z,
+            bbox: [-1.0, -1.0, 1.0, 1.0],
+            outline: vec![],
+            ceiling: None,
+            solid: vec![],
+        }
     }
 
     #[test]
@@ -262,12 +314,13 @@ mod tests {
         // cima dele, mas mais ao fundo que o centro do tampo.
         let n = v3(0.0, 0.94, 0.34);
         let top = SortItem {
-            pts: vec![v3(-1.0, 0.0, 0.0), v3(1.0, 0.0, 0.0)],
+            pts: vec![v3(-1.0, 0.34, -0.94), v3(1.0, 0.34, -0.94), v3(1.0, -0.34, 0.94), v3(-1.0, -0.34, 0.94)],
             normal: Some(n),
             depth: 0.0,
             bbox: [-1.0, -1.0, 1.0, 1.0],
             outline: vec![],
             ceiling: None,
+            solid: vec![],
         };
         let on_top = SortItem {
             pts: vec![v3(0.0, 0.0, 0.0) + n * 0.1 + v3(0.0, 0.34, -0.94) * 0.5],
@@ -276,6 +329,7 @@ mod tests {
             bbox: [-0.1, -0.1, 0.1, 0.1],
             outline: vec![],
             ceiling: None,
+            solid: vec![],
         };
         assert_eq!(order(&[on_top, top]).0, vec![1, 0]);
     }
@@ -290,6 +344,7 @@ mod tests {
             bbox: [-1.0, -1.0, 1.0, 1.0],
             outline: vec![],
             ceiling: None,
+            solid: vec![],
         };
         let up = v3(0.0, 0.0, 1.0);
         let a = face(v3(0.0, 0.0, 0.0), up, [v3(1.0, 0.0, 0.0), v3(0.0, 1.0, 0.0)]);
@@ -316,6 +371,7 @@ mod tests {
             bbox: [0.0, 0.0, 1.0, 1.0],
             outline: pts.to_vec(),
             ceiling: None,
+            solid: vec![],
         };
         let a = tri([v2(0.0, 0.0), v2(0.4, 0.0), v2(0.0, 0.4)], 1.0);
         let b = tri([v2(1.0, 1.0), v2(0.6, 1.0), v2(1.0, 0.6)], 0.0);

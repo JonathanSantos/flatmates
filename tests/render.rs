@@ -429,3 +429,51 @@ fn steady_frames_keep_the_backdrop_still() {
     assert_eq!(head(&a), head(&b));
     assert_ne!(a, b);
 }
+
+/// Varredura de quem senta: assentos, alturas, poses, roupas e câmeras.
+/// Nenhuma combinação pode deixar a ordem de pintura ambígua.
+#[test]
+fn every_seated_combination_orders_cleanly() {
+    let mut bad = Vec::new();
+    for seat in ["sofa", "chair", "ball", "stool"] {
+        for height in [1.5, 1.6, 1.72, 1.8, 1.9] {
+            for pose in ["sitting", "holding", "waving", "thinking"] {
+                for outfit in ["tshirt", "hoodie", "blazer", "dress"] {
+                    for cam in ["front", "three-quarter", "isometric"] {
+                        let json = format!(
+                            r#"{{"camera":"{cam}","items":[{{"id":"s","kind":"{seat}","at":[0,-0.5]}},{{"kind":"person","sits_on":"s","pose":"{pose}","height":{height},"outfit":"{outfit}","hair":"long"}}]}}"#
+                        );
+                        if !out(&json).warnings.is_empty() {
+                            bad.push(format!("{seat} {height} {pose} {outfit} {cam}"));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    assert!(bad.is_empty(), "{} combinações com aviso, por exemplo: {:?}", bad.len(), &bad[..bad.len().min(5)]);
+}
+
+#[test]
+fn patterns_glasses_speech_and_rug_render() {
+    let base = |extra: &str| {
+        format!(
+            r##"{{{PLAIN},"shading":false,"items":[{{"kind":"person","facing":10,"outfit":"tank","top_color":"#ff00fe","hair":"bald","face":"dots"{extra}}}]}}"##
+        )
+    };
+    let plain = count(&base(""), [255, 0, 254]);
+    for pattern in ["stripes", "dots"] {
+        let printed = count(&base(&format!(r#","pattern":"{pattern}""#)), [255, 0, 254]);
+        assert!(printed < plain * 9 / 10 && printed > plain / 3, "{pattern}: {printed} de {plain} px na cor lisa");
+    }
+    let glasses = svg(&base(r#","accessories":["glasses"]"#));
+    assert!(glasses.len() > svg(&base("")).len());
+    let said = out(&base(r#","says":"Olá & <tchau>""#));
+    assert!(said.svg.contains("Olá &amp; &lt;tchau&gt;</text>") && said.warnings.is_empty());
+    let err = render(&base(r#","says":"     ""#), &Options::default()).err().unwrap();
+    assert!(err.contains("says"), "{err}");
+    // O tapete fica embaixo de quem pisa nele e não gera aviso de lugar ocupado.
+    let rug =
+        out(r##"{"items":[{"kind":"rug","at":[0,0],"color":"#ff00fe"},{"kind":"person","at":[0,0]},{"kind":"cat","at":[0.7,0.2]}]}"##);
+    assert!(rug.warnings.is_empty(), "{:?}", rug.warnings);
+}

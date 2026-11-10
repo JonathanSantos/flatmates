@@ -8,7 +8,7 @@ use crate::figure::pose::{self, Grip, Pose};
 use crate::figure::{self, motion, Dims, Placement, Rig, SOLE_BACK};
 use crate::math::Det;
 use crate::math::{v3, V3};
-use crate::prim::Prim;
+use crate::prim::{Pattern, Prim, Shape};
 use crate::props::{self, Xf};
 use crate::rng::Rng;
 use crate::spec::{Item, Spec, SKIN_MODES};
@@ -100,6 +100,11 @@ fn look_for(it: &Item, index: usize, cast: usize, style: &Style, rng: &mut Rng) 
         face: it.face.clone().unwrap_or_else(|| "none".into()),
         beard: it.beard.unwrap_or(false),
         accessories: it.accessories.clone(),
+        pattern: match it.pattern.as_deref() {
+            Some("stripes") => Some(Pattern::Stripes),
+            Some("dots") => Some(Pattern::Dots),
+            _ => None,
+        },
     };
     (look, outfit_name)
 }
@@ -111,7 +116,15 @@ fn seated_version(p: Pose) -> Pose {
         return Pose { floor: false, ..p };
     }
     let sit = pose::pose("sitting").unwrap();
-    Pose { hands: p.hands, grips: p.grips, head_yaw: p.head_yaw, head_pitch: p.head_pitch, tilt: p.tilt, ..sit }
+    // Mão que estava solta ao lado do corpo vai para a coxa: pendurada, ela
+    // atravessaria o assento.
+    let mut hands = p.hands;
+    for (hand, rest) in hands.iter_mut().zip(sit.hands) {
+        if hand.at.y < -0.7 {
+            *hand = rest;
+        }
+    }
+    Pose { hands, grips: p.grips, head_yaw: p.head_yaw, head_pitch: p.head_pitch, tilt: p.tilt, ..sit }
 }
 
 /// Ângulo (radianos) para olhar de `from` para `to` no plano do chão.
@@ -443,6 +456,36 @@ pub fn build(spec: &Spec, cam: &Camera, style: &Style, time: f64) -> Result<Scen
             scene.prims.extend(props::held(what, Xf { pos: at, yaw, k: s }, cam, accent));
         }
 
+        if let Some(words) = it.says.as_deref().map(str::trim) {
+            // Balão de fala: um painel virado para a câmera, acima da cabeça e
+            // puxado para o lado de dentro da cena.
+            let size = 0.115 * s;
+            let (w, h) = (crate::text::width(words, size) + 0.20 * s, 0.24 * s);
+            let (right, up) = (cam.right(), cam.up());
+            let lean = if place.pos.x > 0.2 { -1.0 } else { 1.0 };
+            let center = rig.head + up * (dims.head_r + 0.36 * s) + right * (lean * w * 0.28);
+            let corner = |sx: f64, sy: f64| center + right * (sx * (w / 2.0 - 0.06 * s)) + up * (sy * (h / 2.0 - 0.06 * s));
+            let body = [corner(-1.0, 1.0), corner(1.0, 1.0), corner(1.0, -1.0), corner(-1.0, -1.0)];
+            let root = center - right * (lean * w * 0.2) - up * (h / 2.0 - 0.01 * s);
+            let tail = [root - right * (0.05 * s), root + right * (0.05 * s), root - right * (lean * 0.05 * s) - up * (0.11 * s)];
+            let paper = color::PAPER;
+            let drop = (right * 0.012 - up * 0.022) * s;
+            let shadow: Vec<V3> = body.iter().map(|p| *p + drop).collect();
+            let mut bubble = Prim::face(
+                vec![
+                    Shape::poly(&shadow, 0.06 * s, INK).alpha(0.12),
+                    Shape::poly(&tail, 0.006 * s, paper),
+                    Shape::poly(&body, 0.06 * s, paper),
+                    Shape::label(center - up * (size * 0.36), words, size, INK),
+                ],
+                &body,
+                cam.toward(),
+            );
+            // Fala é anotação: fica por cima da cena.
+            bubble.key = body.iter().map(|p| *p + cam.toward() * 4.0).collect();
+            scene.prims.push(bubble);
+        }
+
         // Sombra de contato sob cada pé apoiado; no salto, uma só sob o corpo.
         let mut grounded = false;
         for f in 0..2 {
@@ -481,7 +524,7 @@ pub fn build(spec: &Spec, cam: &Camera, style: &Style, time: f64) -> Result<Scen
     for a in 0..n {
         for b in a + 1..n {
             let (Some(pa), Some(pb)) = (pos[a], pos[b]) else { continue };
-            if items[a].kind == "card" || items[b].kind == "card" {
+            if matches!(items[a].kind.as_str(), "card" | "rug") || matches!(items[b].kind.as_str(), "card" | "rug") {
                 continue;
             }
             let reach = (foot[a].0.min(foot[a].1) + foot[b].0.min(foot[b].1)) * 0.55;

@@ -41,6 +41,8 @@
 | `sits_on`, `seat` | Assento (e qual lugar do sofá: 0 ou 1). |
 | `uses` | Mãos no objeto: as duas no laptop, uma em caneca, quadro, caixa, livros, mesa. |
 | `holds` | `phone`, `mug`, `book`, `tablet`, `box`. |
+| `says` | Balão de fala sobre a cabeça, até 40 caracteres. |
+| `pattern` | Estampa da parte de cima: `stripes` ou `dots`. |
 | `look_at`, `points_at` | Cabeça e braço miram o item. |
 | `outfit`, `bottom`, `hair`, `skin`, `face`, `beard`, `accessories`, `build`, `height` | Aparência. O que faltar é sorteado pela `seed`. |
 | `top_color`, `bottom_color`, `shoe_color`, `hair_color` | Nome de cor ou hex. |

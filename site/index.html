@@ -57,7 +57,7 @@
     <p class="kicker">exemplos · clique para abrir o JSON</p>
     <h2>Cada imagem aqui é um arquivo de 10 a 40 linhas.</h2>
     <p class="lede muted">Nenhuma tem coordenada de pixel. São relações: sentado em, em cima de, ao lado de, olhando para.</p>
-    <div class="gallery"><button class="shot wide" type="button" data-example="team"><img src="demo/team.png" alt="Exemplo team" loading="lazy" width="1200" height="630"><b>team.json</b><em>abrir no editor ↓</em></button><button class="shot " type="button" data-example="night"><img src="demo/night.png" alt="Exemplo night" loading="lazy" width="1200" height="630"><b>night.json</b><em>abrir no editor ↓</em></button><button class="shot " type="button" data-example="custom"><img src="demo/custom.png" alt="Exemplo custom" loading="lazy" width="1200" height="630"><b>custom.json</b><em>abrir no editor ↓</em></button><button class="shot wide" type="button" data-example="isometric"><img src="demo/isometric.png" alt="Exemplo isometric" loading="lazy" width="1200" height="630"><b>isometric.json</b><em>abrir no editor ↓</em></button><button class="shot " type="button" data-example="brand"><img src="demo/brand.png" alt="Exemplo brand" loading="lazy" width="1200" height="630"><b>brand.json</b><em>abrir no editor ↓</em></button><button class="shot " type="button" data-example="remote-work"><img src="demo/remote-work.png" alt="Exemplo remote-work" loading="lazy" width="1200" height="630"><b>remote-work.json</b><em>abrir no editor ↓</em></button><button class="shot " type="button" data-example="lounge"><img src="demo/lounge.png" alt="Exemplo lounge" loading="lazy" width="1200" height="630"><b>lounge.json</b><em>abrir no editor ↓</em></button><button class="shot " type="button" data-example="pets"><img src="demo/pets.png" alt="Exemplo pets" loading="lazy" width="1200" height="630"><b>pets.json</b><em>abrir no editor ↓</em></button><button class="shot " type="button" data-example="office"><img src="demo/office.png" alt="Exemplo office" loading="lazy" width="1200" height="630"><b>office.json</b><em>abrir no editor ↓</em></button></div>
+    <div class="gallery"><button class="shot wide" type="button" data-example="team"><img src="demo/team.png" alt="Exemplo team" loading="lazy" width="1200" height="630"><b>team.json</b><em>abrir no editor ↓</em></button><button class="shot " type="button" data-example="night"><img src="demo/night.png" alt="Exemplo night" loading="lazy" width="1200" height="630"><b>night.json</b><em>abrir no editor ↓</em></button><button class="shot " type="button" data-example="custom"><img src="demo/custom.png" alt="Exemplo custom" loading="lazy" width="1200" height="630"><b>custom.json</b><em>abrir no editor ↓</em></button><button class="shot wide" type="button" data-example="isometric"><img src="demo/isometric.png" alt="Exemplo isometric" loading="lazy" width="1200" height="630"><b>isometric.json</b><em>abrir no editor ↓</em></button><button class="shot " type="button" data-example="brand"><img src="demo/brand.png" alt="Exemplo brand" loading="lazy" width="1200" height="630"><b>brand.json</b><em>abrir no editor ↓</em></button><button class="shot " type="button" data-example="remote-work"><img src="demo/remote-work.png" alt="Exemplo remote-work" loading="lazy" width="1200" height="630"><b>remote-work.json</b><em>abrir no editor ↓</em></button><button class="shot " type="button" data-example="lounge"><img src="demo/lounge.png" alt="Exemplo lounge" loading="lazy" width="1200" height="630"><b>lounge.json</b><em>abrir no editor ↓</em></button><button class="shot " type="button" data-example="pets"><img src="demo/pets.png" alt="Exemplo pets" loading="lazy" width="1200" height="630"><b>pets.json</b><em>abrir no editor ↓</em></button><button class="shot " type="button" data-example="demo-day"><img src="demo/demo-day.png" alt="Exemplo demo-day" loading="lazy" width="1200" height="630"><b>demo-day.json</b><em>abrir no editor ↓</em></button></div>
     <figure class="fig" style="margin-top:14px">
       <img src="demo/walk.svg" alt="Caminhada, aceno, corrida e salto animados" loading="lazy" width="1200" height="630">
       <figcaption>Animação exportada com <code>flatmates animate</code>: um único SVG, sem JavaScript.</figcaption>
@@ -185,7 +185,8 @@
         <p>SVG não tem profundidade: o que é escrito depois fica por cima. Ordenar pela distância do centro de cada peça erra com peças grandes. Uma caneca no fundo de uma mesa está mais longe que o centro do tampo, e sumiria atrás dele.</p>
         <p>O motor compara cada par de peças que se sobrepõe na tela, testando o contorno convexo e não só a caixa:</p>
         <ul>
-          <li>Se uma é uma face plana, vale de que lado do plano a outra está.</li>
+          <li>Uma caixa é um sólido convexo: a peça está na frente dela se fica do lado de fora de algum plano visível. Olhar um plano só erra com quem senta na frente de um encosto mais alto que os ombros.</li>
+          <li>Se todos os pontos de uma peça estão mais perto da câmera que todos os da outra, a ordem já está decidida.</li>
           <li>A lateral de um cilindro sabe que fica toda abaixo do próprio tampo.</li>
           <li>Uma peça que cruza o plano é julgada pelo ponto dela que cai sobre a face.</li>
           <li>Entre duas formas orgânicas, vale a profundidade, com um empurrão por papel: mão sobre braço, braço sobre tronco.</li>
@@ -210,6 +211,8 @@
           <li><b>Névoa de profundidade:</b> quando a cena tem mais de 1,2 m de fundo, cada item puxa até 16% para a cor do fundo conforme a distância.</li>
           <li><b>Três tons nos móveis:</b> claro em cima, base de frente, escuro na lateral direita. Nunca um degradê.</li>
           <li><b>Cabeça com queixo:</b> crânio mais mandíbula, para o rosto ter direção de perfil. Franja, brilho no cabelo do lado da luz, bochechas no sorriso.</li>
+          <li><b>Silhueta contínua:</b> o tronco é uma sequência de fechos entre estações interpoladas por uma curva suave, do ombro ao quadril, em vez de dois blocos com uma quina na cintura.</li>
+          <li><b>Estampas:</b> listras e bolinhas seguem uma grade fixa da imagem, recortadas por cada peça. Tronco e manga se encontram sem costura.</li>
           <li><b>Enquadramento:</b> a cena é ajustada à área útil; blobs, formas e confete são montados em volta do grupo e fora do título, que quebra sozinho em até três linhas.</li>
         </ul>
         <p>E uma que não se vê: seno, cosseno e arco tangente são calculados só com operações que o IEEE 754 define bit a bit. A mesma cena dá os mesmos bytes em macOS, Linux, Windows e no navegador.</p>
@@ -257,7 +260,7 @@
       <div class="text">
         <h3>O que ficou travado em teste</h3>
         <p>Os testes de perspectiva medem pixels, não texto: a caneca aparece sobre a mesa nas quatro câmeras, as pernas somem atrás do sofá, as mãos de quem digita ficam visíveis sobre o tampo, de costas não sobra rosto, a regata marca a cintura.</p>
-        <p>São 60 testes, rodando em macOS, Linux e Windows a cada envio.</p>
+        <p>São 62 testes, rodando em macOS, Linux e Windows a cada envio. Um deles senta um personagem em 960 combinações de assento, altura, pose, roupa e câmera e exige que nenhuma deixe a ordem de pintura ambígua.</p>
       </div>
     </div>
   </div>

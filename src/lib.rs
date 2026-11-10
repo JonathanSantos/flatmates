@@ -51,7 +51,7 @@ pub struct Output {
     pub explain: serde_json::Value,
 }
 
-pub const EXAMPLES: [(&str, &str); 13] = [
+pub const EXAMPLES: [(&str, &str); 14] = [
     ("team", include_str!("../examples/team.json")),
     ("remote-work", include_str!("../examples/remote-work.json")),
     ("office", include_str!("../examples/office.json")),
@@ -65,6 +65,7 @@ pub const EXAMPLES: [(&str, &str); 13] = [
     ("night", include_str!("../examples/night.json")),
     ("walk", include_str!("../examples/walk.json")),
     ("builds", include_str!("../examples/builds.json")),
+    ("demo-day", include_str!("../examples/demo-day.json")),
 ];
 
 fn escape(s: &str) -> String {
@@ -221,13 +222,15 @@ fn split_stuck(prims: &mut Vec<Prim>, stuck: &[usize]) -> usize {
             continue;
         }
         let (fill, round) = (shape.fill, *round);
+        let solid = p.solid.clone();
         let q = [pts[0], pts[1], pts[2], pts[3]];
         let mid = |a: V3, b: V3| a.lerp(b, 0.5);
         let c = mid(q[0], q[2]);
         let m = [mid(q[0], q[1]), mid(q[1], q[2]), mid(q[2], q[3]), mid(q[3], q[0])];
         let quads = [[q[0], m[0], c, m[3]], [m[0], q[1], m[1], c], [c, m[1], q[2], m[2]], [m[3], c, m[2], q[3]]];
         for (k, quad) in quads.iter().enumerate() {
-            let piece = Prim::face(vec![Shape::poly(quad, round, fill)], quad, normal);
+            let mut piece = Prim::face(vec![Shape::poly(quad, round, fill)], quad, normal);
+            piece.solid = solid.clone();
             if k == 0 {
                 prims[i] = piece;
             } else {
@@ -252,6 +255,7 @@ fn sort_items(prims: &[Prim], cam: &Camera) -> Vec<SortItem> {
                 bbox: p.bounds(cam),
                 outline: p.outline(cam),
                 ceiling: p.ceiling.map(|(q, n)| (cam.view(q), cam.view(n))),
+                solid: p.solid.iter().map(|(q, n)| (cam.view(*q), cam.view(*n))).collect(),
             }
         })
         .collect()

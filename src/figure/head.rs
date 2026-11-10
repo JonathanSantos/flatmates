@@ -38,7 +38,12 @@ pub fn draw(rig: &Rig, look: &Look, cam: &Camera) -> Vec<Prim> {
         shapes.push(neck);
         // Esfera do crânio mais o queixo: a cabeça vira um oval que aponta
         // para a frente, em vez de uma bola sem direção.
-        shapes.push(Shape::hull(&[(c, r), (at(0.20, -0.40, 0.0), r * 0.76), (at(0.98, -0.10, 0.0), 0.022 * s)], skin));
+        // Mandíbula larga (dá o oval de frente) e queixo adiantado (deixa o
+        // rosto de pé no perfil, em vez de apontar para cima).
+        shapes.push(Shape::hull(
+            &[(c, r), (at(0.16, -0.36, 0.0), r * 0.78), (at(0.50, -0.62, 0.0), r * 0.44), (at(1.0, -0.12, 0.0), 0.027 * s)],
+            skin,
+        ));
     }
 
     // Orelhas: só as que não estão escondidas atrás da cabeça.
@@ -50,14 +55,16 @@ pub fn draw(rig: &Rig, look: &Look, cam: &Camera) -> Vec<Prim> {
 
     match look.hair.as_str() {
         "short" | "bun" | "ponytail" => {
-            shapes.push(Shape::cap(c, r * 1.07, crown, 77.0, hair));
-            shapes.push(Shape::cap(c, r * 1.07, u * 0.25 - f * 0.97, 64.0, hair));
+            // Topo com a linha do cabelo quase horizontal, acima da orelha,
+            // e a nuca coberta. De perfil o rosto fica de frente, não para cima.
+            shapes.push(Shape::cap(c, r * 1.07, u * 0.95 - f * 0.31, 64.0, hair));
+            shapes.push(Shape::cap(c, r * 1.07, u * 0.30 - f * 0.95, 66.0, hair));
             // Franja curta: traz a linha do cabelo para a testa na vista de frente.
             shapes.push(Shape::cap(c, r * 1.07, u * 0.90 + f * 0.43, 40.0, hair));
         }
         "curly" => {
-            shapes.push(Shape::cap(c, r * 1.06, crown, 75.0, hair));
-            shapes.push(Shape::cap(c, r * 1.06, u * 0.25 - f * 0.97, 64.0, hair));
+            shapes.push(Shape::cap(c, r * 1.06, u * 0.95 - f * 0.31, 62.0, hair));
+            shapes.push(Shape::cap(c, r * 1.06, u * 0.30 - f * 0.95, 66.0, hair));
             let tufts = [
                 (0.30, 0.95, 0.0),
                 (0.10, 1.0, 0.45),
@@ -90,7 +97,7 @@ pub fn draw(rig: &Rig, look: &Look, cam: &Camera) -> Vec<Prim> {
         // Faixa que contorna a mandíbula, por baixo da linha da boca.
         shapes.push(Shape::cap(c, r * 1.03, f * 0.25 - u * 0.97, 36.0, hair));
         if seen(f) > -0.15 {
-            let jaw = [(at(0.20, -0.66, 0.50), r * 0.40), (at(0.20, -0.66, -0.50), r * 0.40), (at(0.26, -0.80, 0.0), r * 0.40)];
+            let jaw = [(at(0.18, -0.66, 0.50), r * 0.34), (at(0.18, -0.66, -0.50), r * 0.34), (at(0.50, -0.70, 0.0), r * 0.42)];
             shapes.push(Shape::hull(&jaw, hair));
         }
     }
@@ -128,7 +135,7 @@ pub fn draw(rig: &Rig, look: &Look, cam: &Camera) -> Vec<Prim> {
         }
     }
 
-    if seen(f) > 0.25 && look.face != "none" {
+    if seen(f) > -0.2 && look.face != "none" {
         let on_face = |yaw: f64, pitch: f64| {
             let dir = f * (yaw.dcos() * pitch.dcos()) + side * (yaw.dsin() * pitch.dcos()) + u * pitch.dsin();
             c + dir * (r * 1.005)
@@ -136,14 +143,36 @@ pub fn draw(rig: &Rig, look: &Look, cam: &Camera) -> Vec<Prim> {
         // Cada olho só aparece se a parte do rosto onde ele fica estiver à vista.
         for sg in SIGN {
             let eye = on_face(sg * 0.40, 0.02);
-            if seen(eye - c) > 0.3 * r {
+            if seen(eye - c) > 0.12 * r {
                 shapes.push(Shape::hull(&[(eye, 0.011 * s)], INK));
+            }
+        }
+        if look.accessories.iter().any(|a| a == "glasses") {
+            // Aro em volta de cada olho à vista, e a ponte quando os dois aparecem.
+            let mut shown = 0;
+            for sg in SIGN {
+                let eye = on_face(sg * 0.40, 0.02);
+                if seen(eye - c) <= 0.12 * r {
+                    continue;
+                }
+                shown += 1;
+                let ring: Vec<V3> = (0..=16)
+                    .map(|k| {
+                        let t = std::f64::consts::TAU * k as f64 / 16.0;
+                        on_face(sg * 0.40 + 0.22 * t.dcos(), 0.02 + 0.21 * t.dsin())
+                    })
+                    .collect();
+                shapes.push(Shape::poly(&ring, 0.0, crate::color::WHITE).alpha(0.32));
+                shapes.push(Shape::curve(&ring, 0.012 * s, true, INK));
+            }
+            if shown == 2 {
+                shapes.push(Shape::curve(&[on_face(-0.18, 0.04), on_face(0.0, 0.07), on_face(0.18, 0.04)], 0.012 * s, true, INK));
             }
         }
         if look.face == "smile" && !look.beard {
             for sg in SIGN {
                 let cheek = on_face(sg * 0.66, -0.26);
-                if seen(cheek - c) > 0.35 * r {
+                if seen(cheek - c) > 0.30 * r {
                     shapes.push(Shape::hull(&[(cheek, 0.019 * s)], skin.mix(Rgb::hex(0xff5c5c), 0.30)));
                 }
             }

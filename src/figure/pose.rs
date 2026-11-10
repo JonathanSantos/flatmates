@@ -85,7 +85,7 @@ const BASE: Pose = Pose {
     hip: 0.0,
     twist: 0.0,
     head_yaw: 0.0,
-    head_pitch: 0.0,
+    head_pitch: 3.0,
     air: 0.0,
     seated: false,
     floor: false,
@@ -226,9 +226,10 @@ pub fn pose(name: &str) -> Option<Pose> {
         },
         "sitting" => Pose {
             seated: true,
-            lean: -3.0,
+            lean: 1.0,
             feet: [foot(0.01, 0.46, 0.0, 0.0), foot(0.01, 0.40, 0.0, 0.0)],
-            hands: [hand(0.02, -0.62, 0.40, v3(0.5, -0.2, -1.0)), hand(0.02, -0.62, 0.40, v3(0.5, -0.2, -1.0))],
+            // Cotovelos para fora e para baixo: não atravessam o encosto.
+            hands: [hand(0.02, -0.62, 0.40, v3(0.9, -0.6, -0.2)), hand(0.02, -0.62, 0.40, v3(0.9, -0.6, -0.2))],
             ..BASE
         },
         "typing" => Pose {

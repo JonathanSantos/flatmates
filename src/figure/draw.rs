@@ -5,13 +5,14 @@ use super::{Rig, SIGN, SOLE_BACK, SOLE_FRONT, SOLE_R};
 use crate::camera::Camera;
 use crate::color::{Rgb, INK, WHITE};
 use crate::math::V3;
-use crate::prim::{Prim, Shape};
+use crate::prim::{Pattern, Prim, Shape};
 
 pub const OUTFITS: [&str; 7] = ["tshirt", "shirt", "hoodie", "sweater", "blazer", "tank", "dress"];
 pub const BOTTOMS: [&str; 3] = ["pants", "shorts", "skirt"];
 pub const FACES: [&str; 3] = ["none", "dots", "smile"];
 pub const HAIRS: [&str; 8] = ["short", "bob", "long", "bun", "ponytail", "afro", "curly", "bald"];
-pub const ACCESSORIES: [&str; 3] = ["beanie", "headphones", "backpack"];
+pub const ACCESSORIES: [&str; 4] = ["beanie", "headphones", "backpack", "glasses"];
+pub const PATTERNS: [&str; 2] = ["stripes", "dots"];
 
 /// Corte da parte de cima: quanto cobre e quanta folga tem.
 #[derive(Clone, Copy, Debug)]
@@ -73,6 +74,8 @@ pub struct Look {
     pub face: String,
     pub beard: bool,
     pub accessories: Vec<String>,
+    /// Estampa da parte de cima.
+    pub pattern: Option<Pattern>,
 }
 
 /// Tom do membro do lado de lá.
@@ -115,6 +118,8 @@ struct Bone {
     flare: f64,
     /// Punho canelado: uma faixa mais escura onde o pano termina.
     band: Option<Rgb>,
+    /// Estampa do pano.
+    pattern: Option<(Pattern, Rgb)>,
     bias: f64,
 }
 
@@ -131,9 +136,9 @@ fn bone(out: &mut Vec<Prim>, cam: &Camera, bn: &Bone) {
         if bn.cover > t0 {
             let end = bn.cover.min(t1);
             if bn.cover >= 1.0 || bn.cover > t1 {
-                shapes.push(Shape::hull(&[(at(t0), r(t0) + bn.loose), (at(end), r(end) + bn.loose)], bn.cloth));
+                shapes.push(Shape::hull(&[(at(t0), r(t0) + bn.loose), (at(end), r(end) + bn.loose)], bn.cloth).patterned(bn.pattern));
             } else {
-                shapes.push(cuffed(at(t0), r(t0) + bn.loose, at(end), r(end) + bn.loose + bn.flare, cam, bn.cloth));
+                shapes.push(cuffed(at(t0), r(t0) + bn.loose, at(end), r(end) + bn.loose + bn.flare, cam, bn.cloth).patterned(bn.pattern));
                 if let Some(color) = bn.band {
                     let from = (end - 0.16).max(t0);
                     let grip = bn.loose * 0.55;
@@ -158,8 +163,12 @@ fn hand_shapes(rig: &Rig, i: usize, skin: Rgb) -> Vec<Shape> {
         |from: V3, toward: V3, len: f64, r: f64| Shape::hull(&[(from, r * s), (from + toward.norm() * (len * s), r * 0.86 * s)], skin);
     match rig.grips[i] {
         Grip::Relaxed => vec![
-            Shape::hull(&[(wr, d.r_wrist), (palm, 0.052 * s), (wr + dir * (0.118 * s), 0.040 * s)], skin),
-            finger(palm, dir * 0.45 + thumb_dir, 0.068, 0.020),
+            // Palma curta, dedos juntos afinando e um polegar que se destaca.
+            Shape::hull(
+                &[(wr, d.r_wrist), (palm, 0.047 * s), (wr + dir * (0.082 * s), 0.040 * s), (wr + dir * (0.112 * s), 0.027 * s)],
+                skin,
+            ),
+            finger(wr + dir * (0.03 * s), dir * 0.55 + thumb_dir, 0.062, 0.019),
         ],
         Grip::Fist => vec![
             Shape::hull(&[(wr, d.r_wrist), (wr + dir * (0.055 * s), 0.054 * s)], skin),
@@ -183,8 +192,8 @@ fn hand_shapes(rig: &Rig, i: usize, skin: Rgb) -> Vec<Shape> {
                         (wr, d.r_wrist),
                         (palm + across * (0.022 * s), 0.036 * s),
                         (palm - across * (0.022 * s), 0.036 * s),
-                        (tip + across * (0.026 * s), 0.026 * s),
-                        (tip - across * (0.026 * s), 0.026 * s),
+                        (tip + across * (0.016 * s), 0.030 * s),
+                        (tip - across * (0.016 * s), 0.030 * s),
                     ],
                     skin,
                 ),
@@ -229,6 +238,7 @@ pub fn draw(rig: &Rig, look: &Look, cam: &Camera, shading: bool) -> Vec<Prim> {
             loose: leg_loose,
             flare,
             band: None,
+            pattern: None,
             bias: 0.0,
         };
         bone(&mut out, cam, &leg);
@@ -273,18 +283,54 @@ pub fn draw(rig: &Rig, look: &Look, cam: &Camera, shading: bool) -> Vec<Prim> {
     let waist_disc = |sg: f64| (rig.waist + rig.side * (sg * d.waist_half), mid_r);
     let corner = 0.028 * s;
     let hem_mid = rig.pelvis + hem - rig.spine * (hip_r - corner);
-    let chest_part = vec![
+    // Estações do tronco, de cima para baixo: (ponto esquerdo, ponto direito, raio).
+    // Entre elas a largura é interpolada por uma curva suave, e cada par de
+    // estações vizinhas vira um fecho. O contorno fica contínuo do ombro ao
+    // quadril, com cintura, em vez de dois blocos com uma quina no meio.
+    let across = (inset(0) - inset(1)).norm();
+    let bust_c = rig.chest - rig.spine * (d.torso * 0.24) + rig.fwd * (0.022 * s);
+    let bust_r = d.r_bust + loose;
+    let bust_half = (chest_half * 0.97 - d.r_bust).max(0.02 * s);
+    let keys = [
+        (inset(0), inset(1), d.r_chest + loose),
+        (bust_c + across * bust_half, bust_c - across * bust_half, bust_r),
+        (waist_disc(1.0).0, waist_disc(-1.0).0, mid_r),
+        (rig.hip[0] + rig.spine * (0.05 * s), rig.hip[1] + rig.spine * (0.05 * s), hip_r),
+    ];
+    const STEPS: usize = 4;
+    let key = |i: isize| keys[i.clamp(0, keys.len() as isize - 1) as usize];
+    let spline = |p0: f64, p1: f64, p2: f64, p3: f64, t: f64| {
+        0.5 * (2.0 * p1 + (p2 - p0) * t + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t * t + (3.0 * p1 - p0 - 3.0 * p2 + p3) * t * t * t)
+    };
+    let mut stations: Vec<(V3, V3, f64)> = Vec::new();
+    for i in 0..keys.len() as isize - 1 {
+        let (k0, k1, k2, k3) = (key(i - 1), key(i), key(i + 1), key(i + 2));
+        for step in 0..STEPS {
+            let t = step as f64 / STEPS as f64;
+            let point = |a: V3, b: V3, c: V3, e: V3| V3 {
+                x: spline(a.x, b.x, c.x, e.x, t),
+                y: spline(a.y, b.y, c.y, e.y, t),
+                z: spline(a.z, b.z, c.z, e.z, t),
+            };
+            stations.push((point(k0.0, k1.0, k2.0, k3.0), point(k0.1, k1.1, k2.1, k3.1), spline(k0.2, k1.2, k2.2, k3.2, t)));
+        }
+    }
+    stations.push(keys[keys.len() - 1]);
+    let mut parts: Vec<Vec<(V3, f64)>> =
+        stations.windows(2).map(|w| vec![(w[0].0, w[0].2), (w[0].1, w[0].2), (w[1].0, w[1].2), (w[1].1, w[1].2)]).collect();
+    // Trapézio: dá queda aos ombros em vez de um topo reto.
+    parts.push(vec![
         (inset(0), d.r_chest + loose),
         (inset(1), d.r_chest + loose),
-        // Trapézio: dá queda aos ombros em vez de um topo reto.
         (rig.chest + rig.spine * (0.012 * s), 0.058 * s + loose),
-        (rig.chest - rig.spine * (d.torso * 0.24) + rig.fwd * (0.024 * s), d.r_bust + loose),
-        waist_disc(1.0),
-        waist_disc(-1.0),
-    ];
+    ]);
+    // Sentado, o pano não afunda no assento: cada esfera sobe o que faltar
+    // para ficar inteira acima do tampo.
+    let rest = |(c, r): (V3, f64)| match rig.seat_top {
+        Some(top) if c.y - r < top + 0.004 => (V3 { y: top + 0.004 + r, ..c }, r),
+        _ => (c, r),
+    };
     let mut hip_part = vec![
-        waist_disc(1.0),
-        waist_disc(-1.0),
         (rig.hip[0] + rig.spine * (0.05 * s), hip_r),
         (rig.hip[1] + rig.spine * (0.05 * s), hip_r),
         (rig.pelvis + rig.spine * (0.12 * s) + rig.fwd * (0.014 * s), d.r_belly + loose + gap * o.drape * 0.5),
@@ -294,9 +340,12 @@ pub fn draw(rig: &Rig, look: &Look, cam: &Camera, shading: bool) -> Vec<Prim> {
         hip_part.push((hem_mid + rig.side * (sg * (d.hip_half + hip_r - corner)), corner));
         hip_part.push((hem_mid + rig.fwd * (sg * (hip_r + 0.012 * s - corner)), corner));
     }
+    let hip_part: Vec<(V3, f64)> = hip_part.into_iter().map(rest).collect();
     let band: Vec<(V3, f64)> =
-        hip_part[5..].iter().flat_map(|&(c, r)| [(c - rig.spine * (0.004 * s), r), (c + rig.spine * (0.03 * s), r)]).collect();
-    let mut torso = vec![Shape::union(vec![chest_part, hip_part], look.top_color).shaded(shading)];
+        hip_part[3..].iter().flat_map(|&(c, r)| [(c - rig.spine * (0.004 * s), r), (c + rig.spine * (0.03 * s), r)]).collect();
+    parts.push(hip_part.clone());
+    let print = look.pattern.map(|p| (p, look.top_color.mix(WHITE, 0.62)));
+    let mut torso = vec![Shape::union(parts, look.top_color).patterned(print).shaded(shading)];
     if o.ribbed {
         torso.push(Shape::hull(&band, look.top_color.mix(INK, 0.13)));
     }
@@ -344,7 +393,7 @@ pub fn draw(rig: &Rig, look: &Look, cam: &Camera, shading: bool) -> Vec<Prim> {
             discs.push((mid + across * sg + across.norm() * (sg * (flare - corner)), corner));
             discs.push((mid + depth_axis * (sg * (flare - corner)), corner));
         }
-        let shape = Shape::hull(&discs, color).shaded(shading);
+        let shape = Shape::hull(&discs, color).patterned(if dress { print } else { None }).shaded(shading);
         out.push(Prim::blob(vec![shape], &key, 0.10));
     }
 
@@ -363,7 +412,14 @@ pub fn draw(rig: &Rig, look: &Look, cam: &Camera, shading: bool) -> Vec<Prim> {
         // O braço de cá fica um tom mais claro que o tronco, para não se
         // fundir com ele quando passa na frente da mesma cor.
         let near = is_far(&rig.shoulder, 1 - i);
-        let cloth = if near { look.top_color.mix(WHITE, 0.07) } else { tone(look.top_color, far) };
+        // Com estampa a manga fica na cor do tronco, para as listras se encontrarem.
+        let cloth = if look.pattern.is_some() {
+            look.top_color
+        } else if near {
+            look.top_color.mix(WHITE, 0.07)
+        } else {
+            tone(look.top_color, far)
+        };
         let (sh, el, wr) = (rig.shoulder[i], rig.elbow[i], rig.wrist[i]);
         let ls = loose + 0.004 * s;
 
@@ -379,6 +435,7 @@ pub fn draw(rig: &Rig, look: &Look, cam: &Camera, shading: bool) -> Vec<Prim> {
             loose: ls,
             flare: 0.006 * s,
             band: None,
+            pattern: print,
             bias: 0.16,
         };
         bone(&mut out, cam, &arm);

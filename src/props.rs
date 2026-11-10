@@ -9,8 +9,10 @@ use crate::rng::Rng;
 use crate::spec::{CustomDef, Part};
 use std::f64::consts::TAU;
 
-pub const KINDS: [&str; 16] =
-    ["desk", "chair", "stool", "sofa", "ball", "laptop", "mug", "books", "plant", "monstera", "board", "card", "box", "lamp", "cat", "dog"];
+pub const KINDS: [&str; 17] = [
+    "desk", "chair", "stool", "sofa", "ball", "laptop", "mug", "books", "plant", "monstera", "board", "card", "box", "lamp", "cat", "dog",
+    "rug",
+];
 pub const CONTENTS: [&str; 4] = ["chart", "ui", "code", "blank"];
 pub const HOLDS: [&str; 5] = ["phone", "mug", "book", "tablet", "box"];
 
@@ -69,6 +71,12 @@ pub fn boxed(cam: &Camera, m: &dyn Fn(V3) -> V3, c: V3, size: V3, color: Rgb, ro
             let pts = [fc + a1 + a2, fc + a1 - a2, fc - a1 - a2, fc - a1 + a2].map(m);
             faces[k * 2 + j] = Some(Prim::face(vec![Shape::poly(&pts, round, toned(cam, n, color))], &pts, n));
         }
+    }
+    // Cada face conhece os planos visíveis do sólido inteiro: é o que diz se
+    // uma peça solta está na frente da caixa ou atrás dela.
+    let planes: Vec<(V3, V3)> = faces.iter().flatten().filter_map(|f| f.normal.map(|n| (f.key[0], n))).collect();
+    for face in faces.iter_mut().flatten() {
+        face.solid = planes.clone();
     }
     faces
 }
@@ -297,7 +305,7 @@ pub fn build(kind: &str, xf: Xf, cam: &Camera, style: &Style, color: Option<Rgb>
             }
             push_box(out, cam, &m, v3(0.0, 0.415, 0.0), v3(0.46, 0.05, 0.46), accent, r);
             push_box(out, cam, &m, v3(0.0, 0.69, -0.21), v3(0.46, 0.50, 0.045), accent, r);
-            b.anchors.push(("seat".into(), xf.at(0.0, 0.44, -0.02)));
+            b.anchors.push(("seat".into(), xf.at(0.0, 0.44, 0.03)));
             b.top = 0.44;
         }
         "stool" => {
@@ -319,8 +327,8 @@ pub fn build(kind: &str, xf: Xf, cam: &Camera, style: &Style, color: Option<Rgb>
             for x in [-0.95, 0.95] {
                 push_box(out, cam, &m, v3(x, 0.38, 0.02), v3(0.20, 0.54, 0.84), accent.mix(INK, 0.06), r);
             }
-            b.anchors.push(("seat0".into(), xf.at(-0.42, 0.43, 0.06)));
-            b.anchors.push(("seat1".into(), xf.at(0.42, 0.43, 0.06)));
+            b.anchors.push(("seat0".into(), xf.at(-0.42, 0.43, 0.15)));
+            b.anchors.push(("seat1".into(), xf.at(0.42, 0.43, 0.15)));
             b.top = 0.43;
         }
         "ball" => {
@@ -402,10 +410,31 @@ pub fn build(kind: &str, xf: Xf, cam: &Camera, style: &Style, color: Option<Rgb>
                 out.push(Prim::blob(vec![Shape::curve(&[base, mid, tip], 0.014 * k, true, LEAF_DARK)], &[mid], 0.02));
                 let grow = (dir * 0.55 + UP * 0.83).norm();
                 let c = greens[i % 3];
-                let leaf = vec![
-                    Shape::hull(&[(tip, 0.03 * k), (tip + grow * (0.13 * k), 0.125 * k), (tip + grow * (0.31 * k), 0.022 * k)], c),
-                    Shape::curve(&[tip, tip + grow * (0.27 * k)], 0.008 * k, false, c.mix(WHITE, 0.35)),
+                // Folha em coração: dois lóbulos na base e uma ponta, com a
+                // nervura central e três pares de nervuras laterais mais claras.
+                let lateral = {
+                    let l = grow.cross(cam.toward());
+                    if l.len() > 0.2 {
+                        l.norm()
+                    } else {
+                        cam.right()
+                    }
+                };
+                let rib = |t: f64| tip + grow * (0.36 * k * t);
+                let lobe = |sg: f64| rib(0.26) + lateral * (sg * 0.070 * k);
+                let blade = vec![
+                    vec![(lobe(1.0), 0.100 * k), (lobe(-1.0), 0.100 * k), (rib(0.62), 0.085 * k)],
+                    vec![(rib(0.55), 0.090 * k), (rib(1.0), 0.012 * k)],
+                    vec![(rib(0.0), 0.02 * k), (rib(0.3), 0.06 * k)],
                 ];
+                let vein = c.mix(WHITE, 0.32);
+                let mut leaf = vec![Shape::union(blade, c), Shape::curve(&[rib(0.04), rib(0.92)], 0.008 * k, false, vein)];
+                for t in [0.28, 0.46, 0.64] {
+                    for sg in [1.0, -1.0] {
+                        let reach = (0.125 - (t - 0.28) * 0.14) * k;
+                        leaf.push(Shape::curve(&[rib(t), rib(t + 0.10) + lateral * (sg * reach)], 0.006 * k, false, vein));
+                    }
+                }
                 out.push(Prim::blob(leaf, &[tip + grow * (0.13 * k)], 0.0));
             }
             b.top = 0.24;
@@ -452,6 +481,23 @@ pub fn build(kind: &str, xf: Xf, cam: &Camera, style: &Style, color: Option<Rgb>
             cylinder(out, cam, &m, v3(0.0, 0.03, 0.0), 0.014, 0.014, 1.40, steel);
             cylinder(out, cam, &m, v3(0.0, 1.40, 0.0), 0.21, 0.12, 0.26, color.unwrap_or(style.accent(3)));
             b.top = 0.0;
+        }
+        "rug" => {
+            // Tapete oval no chão, em dois tons. É uma face voltada para cima:
+            // tudo o que está sobre ele é pintado depois.
+            let ring = |fx: f64, fz: f64| -> Vec<V3> {
+                (0..48)
+                    .map(|i| {
+                        let a = TAU * i as f64 / 48.0;
+                        xf.at(1.15 * fx * a.dcos(), -0.006, 0.72 * fz * a.dsin())
+                    })
+                    .collect()
+            };
+            let outer = ring(1.0, 1.0);
+            let key: Vec<V3> = outer.iter().step_by(6).copied().collect();
+            let base = accent.mix(WHITE, 0.45);
+            out.push(Prim::face(vec![Shape::poly(&outer, 0.0, base), Shape::poly(&ring(0.8, 0.76), 0.0, base.mix(WHITE, 0.38))], &key, UP));
+            b.shadow = None;
         }
         "cat" | "dog" => {
             let dog = kind == "dog";

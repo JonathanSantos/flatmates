@@ -87,7 +87,7 @@ A cena é escrita com o que as coisas são umas para as outras, não com coorden
 | `explain` | JSON com a caixa em pixels de cada item, os defaults sorteados e os avisos. É o que um agente lê para corrigir a cena sem ver a imagem. |
 | `animate` | SVG animado ou quadros em PNG a partir de `motion`. |
 | `catalog` | Tudo o que o JSON aceita. |
-| `example` | 13 exemplos embutidos. |
+| `example` | 14 exemplos embutidos. |
 
 O contrato completo está em [skill/flatmates/references/contrato.md](skill/flatmates/references/contrato.md).
 
@@ -145,7 +145,7 @@ Um fecho convexo não tem cintura. O tronco são dois fechos (peito e quadril) q
 
 ### 5. Ordem de pintura por oclusão real
 
-SVG não tem profundidade: o que é escrito depois fica por cima. Ordenar pela distância do centro erra com peças grandes (um tampo de mesa, um assento). Cada par que se sobrepõe na tela é julgado pelo plano da face, e o resultado vira um grafo ordenado topologicamente.
+SVG não tem profundidade: o que é escrito depois fica por cima. Ordenar pela distância do centro erra com peças grandes (um tampo de mesa, um assento). Cada par que se sobrepõe na tela é julgado pela geometria: uma caixa é tratada como sólido convexo (a peça está na frente dela se fica do lado de fora de algum plano visível), e o resultado vira um grafo ordenado topologicamente.
 
 <p align="center"><img src="docs/img/occlusion.svg" alt="Ordem de pintura por oclusão" width="880"></p>
 
@@ -157,7 +157,8 @@ Técnicas que não mudam o que a cena diz, só como ela lê:
 - **Três tons nos membros:** o de lá escurece, o de cá clareia. Um braço na frente do tronco da mesma cor continua legível.
 - **Névoa de profundidade:** o que está longe puxa de leve para a cor do fundo.
 - **Cabeça com queixo:** crânio mais mandíbula, para o rosto ter direção de perfil; franja, brilho no cabelo do lado da luz, bochechas no sorriso.
-- **Detalhes de roupa:** cadarço, sola, punhos e barra canelados, queda dos ombros.
+- **Detalhes de roupa:** cadarço, sola, punhos e barra canelados, queda dos ombros, estampas (`pattern`: listras ou bolinhas) alinhadas entre tronco e manga.
+- **Silhueta contínua:** o tronco é uma sequência de fechos entre estações interpoladas por uma curva suave, do ombro ao quadril.
 - **Enquadramento automático:** a cena é ajustada à área útil e a vinheta (blobs, formas, confete) é montada em volta do grupo, fora do título.
 
 ---
@@ -167,6 +168,12 @@ Técnicas que não mudam o que a cena diz, só como ela lê:
 ### Objetos próprios
 
 O que não existe no catálogo é descrito com seis formas em metros (`box`, `cylinder`, `sphere`, `hull`, `chain`, `panel`). Passa pela mesma câmera e pela mesma ordenação, então ganha oclusão, três tons e sombra como os nativos. Veja [examples/custom.json](examples/custom.json) e [objetos.md](skill/flatmates/references/objetos.md).
+
+### Fala, estampas, óculos e tapete
+
+`says` põe um balão sobre a cabeça, `pattern` estampa a roupa, `glasses` entra em `accessories` e `rug` é um tapete que fica sob quem pisa nele.
+
+<p align="center"><img src="demo/demo-day.png" alt="Balão de fala, estampas, óculos e tapete" width="880"></p>
 
 ### Marca, elenco e tema escuro
 
@@ -252,10 +259,9 @@ O segundo comando regenera os SVGs de referência depois de uma mudança visual 
 ## Limites conhecidos
 
 - Só projeção ortográfica, de propósito: é o que o estilo pede e o que mantém tudo coerente.
-- Peças que realmente se atravessam geram aviso; a ordem ali é uma aproximação.
+- Peças que realmente se atravessam geram aviso; a ordem ali é uma aproximação. Sentar é coberto por uma varredura de 960 combinações (assento, altura, pose, roupa, câmera) sem nenhum aviso.
 - A animação é uma troca de quadros, não interpolação de caminhos: o arquivo cresce com o número de quadros.
 - A mão aberta e a saia são as partes mais simples do desenho.
-- Sem balões de fala.
 
 ## Licença
 

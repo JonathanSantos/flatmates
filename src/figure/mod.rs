@@ -121,6 +121,8 @@ pub struct Rig {
     pub head_fwd: V3,
     pub head_up: V3,
     pub grips: [Grip; 2],
+    /// Altura do tampo do assento no mundo, quando sentado.
+    pub seat_top: Option<f64>,
     /// Algum alvo de mão ou pé ficou fora do alcance.
     pub strained: bool,
 }
@@ -176,8 +178,25 @@ pub fn solve(d: &Dims, pose: &Pose, place: &Placement, reach: [Option<V3>; 2]) -
         let lowest = [SOLE_BACK, SOLE_FRONT].iter().map(|&(z, y)| (f * z + u * y).y * s - SOLE_R * s).fold(f64::MAX, f64::min);
         // Assento alto: os pés ficam pendurados na altura em que a canela
         // desce reta, em vez de puxar a coxa para baixo até o chão.
+        // O joelho nunca fica abaixo do assento: a coxa não pode afundar na
+        // borda dele. Quem é baixo para o assento fica com os pés no ar.
+        let seat_top = pelvis_y - d.r_thigh - 0.012 * s;
         let excess = pelvis_y - 0.07 * s - d.shin - d.ankle_h;
-        let dangle = if seated && !pose.floor && excess > 0.1 * s { excess } else { 0.0 };
+        let dangle = if !seated || pose.floor {
+            0.0
+        } else if excess > 0.1 * s {
+            excess
+        } else {
+            // Só para diferenças pequenas (alguém baixo numa cadeira). Num
+            // assento bem mais alto sem ser banco, como a bola, a coxa desce
+            // em rampa e os pés ficam no chão.
+            let lift = seat_top + d.r_knee - 0.02 * s - d.shin - d.ankle_h;
+            if (0.0..=0.06 * s).contains(&lift) {
+                lift
+            } else {
+                0.0
+            }
+        };
         let target = v3(sign * (d.hip_half + goal.out * s), goal.lift * s + lift_all + dangle - lowest, goal.fwd * s);
         let knee_pole = pose.knees[i];
         let leg = two_bone(hip[i], target, d.thigh, d.shin, v3(sign * knee_pole.x, knee_pole.y, knee_pole.z));
@@ -230,6 +249,7 @@ pub fn solve(d: &Dims, pose: &Pose, place: &Placement, reach: [Option<V3>; 2]) -
         head_fwd: dir(head_fwd),
         head_up: dir(head_up),
         grips: pose.grips,
+        seat_top: seat.map(|h| place.pos.y + h),
         strained,
     }
 }

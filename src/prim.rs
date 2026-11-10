@@ -36,6 +36,8 @@ pub enum Geom {
     HullPts(Vec<V3>),
     /// Traço com pontas redondas; `smooth` passa uma curva pelos pontos.
     Curve { pts: Vec<V3>, width: f64, smooth: bool },
+    /// Texto centrado em `at` (linha de base), com altura `size` em metros.
+    Label { at: V3, text: String, size: f64 },
     /// Parte visível de uma calota esférica (cabelo, barba, rosto).
     Cap { c: V3, r: f64, axis: V3, angle: f64 },
 }
@@ -47,11 +49,20 @@ pub struct Shape {
     pub opacity: f64,
     /// Sombra tonal: uma faixa mais escura no lado direito da forma.
     pub shade: bool,
+    /// Estampa recortada pela forma, com a cor do desenho.
+    pub pattern: Option<(Pattern, Rgb)>,
+}
+
+/// Estampas de tecido.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Pattern {
+    Stripes,
+    Dots,
 }
 
 impl Shape {
     pub fn new(geom: Geom, fill: Rgb) -> Shape {
-        Shape { geom, fill, opacity: 1.0, shade: false }
+        Shape { geom, fill, opacity: 1.0, shade: false, pattern: None }
     }
     pub fn hull(discs: &[(V3, f64)], fill: Rgb) -> Shape {
         Shape::new(Geom::Hull(discs.to_vec()), fill)
@@ -90,6 +101,13 @@ impl Shape {
     pub fn cap(c: V3, r: f64, axis: V3, angle_deg: f64, fill: Rgb) -> Shape {
         Shape::new(Geom::Cap { c, r, axis: axis.norm(), angle: angle_deg.to_radians() }, fill)
     }
+    pub fn patterned(mut self, pattern: Option<(Pattern, Rgb)>) -> Shape {
+        self.pattern = pattern;
+        self
+    }
+    pub fn label(at: V3, text: &str, size: f64, fill: Rgb) -> Shape {
+        Shape::new(Geom::Label { at, text: text.to_string(), size }, fill)
+    }
     pub fn shaded(mut self, on: bool) -> Shape {
         self.shade = on;
         self
@@ -114,14 +132,17 @@ pub struct Prim {
     /// Plano (ponto, normal) acima do qual a peça não tem nada: a lateral de
     /// um cilindro fica toda abaixo do tampo.
     pub ceiling: Option<(V3, V3)>,
+    /// Planos (ponto, normal para fora) das faces visíveis do sólido convexo
+    /// a que esta face pertence. Vazio para peças soltas.
+    pub solid: Vec<(V3, V3)>,
 }
 
 impl Prim {
     pub fn blob(shapes: Vec<Shape>, key: &[V3], bias: f64) -> Prim {
-        Prim { shapes, key: key.to_vec(), normal: None, bias, ceiling: None }
+        Prim { shapes, key: key.to_vec(), normal: None, bias, ceiling: None, solid: Vec::new() }
     }
     pub fn face(shapes: Vec<Shape>, key: &[V3], normal: V3) -> Prim {
-        Prim { shapes, key: key.to_vec(), normal: Some(normal), bias: 0.0, ceiling: None }
+        Prim { shapes, key: key.to_vec(), normal: Some(normal), bias: 0.0, ceiling: None, solid: Vec::new() }
     }
 
     /// Contorno convexo em espaço de vista, para testar sobreposição real.
@@ -147,6 +168,7 @@ impl Prim {
                 Geom::HullPts(pts) => pts.iter().for_each(|&p| ring(p, 0.0)),
                 Geom::Curve { pts, width, .. } => pts.iter().for_each(|&p| ring(p, width / 2.0)),
                 Geom::Cap { c, r, .. } => ring(*c, *r),
+                Geom::Label { at, text, size } => ring(*at, crate::text::width(text, *size) / 2.0),
             }
         }
         convex_hull(&pts).into_iter().map(|i| pts[i]).collect()
@@ -170,6 +192,7 @@ impl Prim {
                 Geom::HullPts(pts) => pts.iter().for_each(|&p| add(p, 0.0)),
                 Geom::Curve { pts, width, .. } => pts.iter().for_each(|&p| add(p, width / 2.0)),
                 Geom::Cap { c, r, .. } => add(*c, *r),
+                Geom::Label { at, text, size } => add(*at, crate::text::width(text, *size) / 2.0),
             }
         }
         b
@@ -197,13 +220,17 @@ fn circle_path(c: V2, r: f64) -> String {
 
 const ARC_STEPS: usize = 48;
 
-/// Onde começa a sombra tonal, em fração da largura da forma.
-const SHADE_AT: f64 = 0.68;
+/// Cor da faixa de sombra tonal, aplicada com pouca opacidade.
+const SHADE: Rgb = Rgb::hex(0x10142e);
 
-fn span(discs: &[(V2, f64)]) -> f64 {
-    let lo = discs.iter().map(|(c, r)| c.x - r).fold(f64::MAX, f64::min);
-    let hi = discs.iter().map(|(c, r)| c.x + r).fold(f64::MIN, f64::max);
-    hi - lo
+/// Onde começa a sombra tonal, em fração da largura da forma.
+const SHADE_AT: f64 = 0.70;
+
+/// Caixa dos discos em pixels: [x0, y0, x1, y1].
+fn extent(discs: &[(V2, f64)]) -> [f64; 4] {
+    discs.iter().fold([f64::MAX, f64::MAX, f64::MIN, f64::MIN], |b, (c, r)| {
+        [b[0].min(c.x - r), b[1].min(c.y - r), b[2].max(c.x + r), b[3].max(c.y + r)]
+    })
 }
 
 /// Contorno do fecho convexo de discos, com arcos de verdade em cada disco.
@@ -384,19 +411,19 @@ impl Shape {
         let s = pj.scale;
         let fill = self.fill.css();
         let mut extra = String::new();
-        let mut shade_shift = None;
+        let mut shade_box = None;
         let d = match &self.geom {
             Geom::Hull(discs) => {
                 let px: Vec<(V2, f64)> = discs.iter().map(|&(c, r)| (pj.p(c), r * s)).collect();
-                if self.shade {
-                    shade_shift = Some(span(&px) * SHADE_AT);
+                if self.shade || self.pattern.is_some() {
+                    shade_box = Some(extent(&px));
                 }
                 hull_path(&px)
             }
             Geom::Union(parts) => {
                 let px: Vec<Vec<(V2, f64)>> = parts.iter().map(|d| d.iter().map(|&(c, r)| (pj.p(c), r * s)).collect()).collect();
-                if self.shade {
-                    shade_shift = Some(span(&px.concat()) * SHADE_AT);
+                if self.shade || self.pattern.is_some() {
+                    shade_box = Some(extent(&px.concat()));
                 }
                 px.iter().map(|d| hull_path(d)).collect::<String>()
             }
@@ -424,6 +451,16 @@ impl Shape {
                     num((width * s).max(0.6))
                 );
             }
+            Geom::Label { at, text, size } => {
+                let p = pj.p(*at);
+                let safe = text.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;");
+                return format!(
+                    "<text x=\"{}\" y=\"{}\" text-anchor=\"middle\" font-family=\"Inter, 'Helvetica Neue', Arial, sans-serif\" font-weight=\"700\" font-size=\"{}\" fill=\"{fill}\">{safe}</text>",
+                    num(p.x),
+                    num(p.y),
+                    num(size * s)
+                );
+            }
             Geom::Cap { c, r, axis, angle } => {
                 let center = pj.p(*c);
                 let a = pj.cam.view(*axis);
@@ -447,16 +484,62 @@ impl Shape {
             let _ = write!(extra, " opacity=\"{}\"", self.opacity);
         }
         let base = format!("<path d=\"{d}\" fill=\"{fill}\"{extra}/>");
-        let Some(dx) = shade_shift else { return base };
-        // A mesma forma, deslocada e recortada por ela mesma. O id vem do
-        // próprio caminho, então a saída continua determinística.
+        let Some([x0, y0, x1, y1]) = shade_box else { return base };
+        // Estampa e sombra são recortadas pela própria forma. O id do recorte
+        // vem do caminho, então a saída continua determinística.
         let id = d.bytes().fold(0x811c_9dc5_u32, |h, b| (h ^ b as u32).wrapping_mul(0x0100_0193));
-        format!(
-            "{base}<clipPath id=\"k{id:08x}\"><path d=\"{d}\"/></clipPath><g clip-path=\"url(#k{id:08x})\"><path d=\"{d}\" transform=\"translate({} {})\" fill=\"{}\"/></g>",
-            num(dx),
-            num(dx * 0.10),
-            self.fill.mix(crate::color::INK, 0.075).css()
-        )
+        let mut out = format!("{base}<clipPath id=\"k{id:08x}\"><path d=\"{d}\"/></clipPath><g clip-path=\"url(#k{id:08x})\">");
+        if let Some((pattern, color)) = self.pattern {
+            let step = (s * 0.072).max(4.0);
+            let mut marks = String::new();
+            // A estampa segue uma grade fixa da imagem, não a caixa de cada
+            // peça: assim listras de tronco e manga se encontram.
+            let mut y = (y0 / step).floor() * step;
+            while y < y1 {
+                match pattern {
+                    Pattern::Stripes => {
+                        let _ =
+                            write!(marks, "M{} {}H{}V{}H{}Z", num(x0 - 1.0), num(y), num(x1 + 1.0), num(y + step * 0.42), num(x0 - 1.0));
+                    }
+                    Pattern::Dots => {
+                        let mut x = (x0 / step).floor() * step + if ((y / step).round() as i64) % 2 == 0 { 0.0 } else { step * 0.5 };
+                        while x < x1 {
+                            let r = step * 0.17;
+                            let _ = write!(
+                                marks,
+                                "M{} {}a{r} {r} 0 1 0 {d2} 0a{r} {r} 0 1 0 -{d2} 0Z",
+                                num(x - r),
+                                num(y),
+                                r = num(r),
+                                d2 = num(2.0 * r)
+                            );
+                            x += step;
+                        }
+                    }
+                }
+                y += step;
+            }
+            let _ = write!(out, "<path d=\"{marks}\" fill=\"{}\"/>", color.css());
+        }
+        if self.shade {
+            // Faixa levemente inclinada no lado direito.
+            let (edge, lean) = (x0 + (x1 - x0) * SHADE_AT, (y1 - y0) * 0.07);
+            let _ = write!(
+                out,
+                "<path d=\"M{} {}L{} {}L{} {}L{} {}Z\" fill=\"{}\" opacity=\"0.075\"/>",
+                num(edge + lean),
+                num(y0 - 1.0),
+                num(x1 + 1.0),
+                num(y0 - 1.0),
+                num(x1 + 1.0),
+                num(y1 + 1.0),
+                num(edge - lean),
+                num(y1 + 1.0),
+                SHADE.css()
+            );
+        }
+        out.push_str("</g>");
+        out
     }
 }
 

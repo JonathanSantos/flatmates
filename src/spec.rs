@@ -2,7 +2,7 @@
 //! opções aceitas.
 use crate::camera;
 use crate::color;
-use crate::figure::draw::{ACCESSORIES, BOTTOMS, FACES, HAIRS, OUTFITS};
+use crate::figure::draw::{ACCESSORIES, BOTTOMS, FACES, HAIRS, OUTFITS, PATTERNS};
 use crate::figure::motion::MOTIONS;
 use crate::figure::pose::POSES;
 use crate::figure::BUILDS;
@@ -181,6 +181,10 @@ pub struct Item {
     /// Um braço aponta para este item (id).
     pub points_at: Option<String>,
     pub outfit: Option<String>,
+    /// Estampa da parte de cima: stripes ou dots.
+    pub pattern: Option<String>,
+    /// Fala num balão acima da cabeça (até 40 caracteres).
+    pub says: Option<String>,
     pub bottom: Option<String>,
     pub top_color: Option<String>,
     pub bottom_color: Option<String>,
@@ -376,6 +380,10 @@ pub fn validate(spec: &Spec) -> Result<(), String> {
         wrap(opt("motion", &it.motion, &MOTIONS))?;
         wrap(opt("holds", &it.holds, &HOLDS))?;
         wrap(opt("outfit", &it.outfit, &OUTFITS))?;
+        wrap(opt("pattern", &it.pattern, &PATTERNS))?;
+        if it.says.as_ref().is_some_and(|t| t.trim().is_empty() || t.chars().count() > 40) {
+            return Err(format!("{who}: says precisa de 1 a 40 caracteres"));
+        }
         wrap(opt("bottom", &it.bottom, &BOTTOMS))?;
         wrap(opt("hair", &it.hair, &HAIRS))?;
         wrap(opt("face", &it.face, &FACES))?;
@@ -427,6 +435,8 @@ pub fn catalog() -> serde_json::Value {
             "pose": POSES,
             "motion": MOTIONS,
             "outfit": OUTFITS,
+            "pattern": PATTERNS,
+            "says": "texto do balão, até 40 caracteres",
             "bottom": BOTTOMS,
             "hair": HAIRS,
             "hair_color": names(&color::HAIR_COLORS),

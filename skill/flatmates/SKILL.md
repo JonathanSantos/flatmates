@@ -54,6 +54,8 @@ Você descreve **o que** aparece e **como as coisas se relacionam**. O motor dec
 - **Colaboração:** `board` no centro, uma pessoa com `pose: "pointing"` e `points_at`, outra `thinking` com `look_at` na primeira, uma terceira chegando com `walking`.
 - **Escritório:** câmera `three-quarter` ou `isometric`, mesa, laptop `on` a mesa, cadeira atrás, pessoa com `sits_on` + `uses`.
 - **Mesa de pé:** `desk` com `scale: 1.35` e pessoa com `pose: "desk-typing"` + `uses`.
+- **Conversa:** `says` em quem fala, `look_at` em quem ouve. Um balão por cena lê melhor que vários.
+- **Sala:** `rug` no chão sob o sofá dá um plano de base à cena.
 - **Marca do cliente:** `palette` com 3 a 5 hex da marca e `background` com a cor de fundo. Tudo se recolore.
 - **Série com o mesmo personagem:** defina em `cast` e use `who` em cada cena.
 

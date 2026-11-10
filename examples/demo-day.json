@@ -1,0 +1,77 @@
+{
+  "theme": "sunset",
+  "seed": 9,
+  "title": "Sexta é dia de demo",
+  "items": [
+    {
+      "id": "rug",
+      "kind": "rug",
+      "at": [
+        0.2,
+        0.5
+      ],
+      "scale": 1.6,
+      "color": "violet"
+    },
+    {
+      "id": "sofa",
+      "kind": "sofa",
+      "at": [
+        0,
+        -0.5
+      ],
+      "color": "blue"
+    },
+    {
+      "id": "lia",
+      "kind": "person",
+      "sits_on": "sofa",
+      "seat": 0,
+      "hair": "bob",
+      "outfit": "dress",
+      "pattern": "dots",
+      "skin": "peach",
+      "top_color": "coral",
+      "face": "smile",
+      "accessories": [
+        "glasses"
+      ],
+      "look_at": "teo",
+      "says": "Ficou ótimo!"
+    },
+    {
+      "id": "teo",
+      "kind": "person",
+      "at": [
+        2.0,
+        0.5
+      ],
+      "facing": -55,
+      "pose": "presenting",
+      "hair": "curly",
+      "outfit": "tshirt",
+      "pattern": "stripes",
+      "skin": "sky",
+      "top_color": "green",
+      "face": "smile",
+      "look_at": "lia"
+    },
+    {
+      "kind": "monstera",
+      "near": {
+        "id": "sofa",
+        "side": "left",
+        "gap": 0.35
+      },
+      "scale": 1.2
+    },
+    {
+      "kind": "cat",
+      "at": [
+        0.9,
+        1.0
+      ],
+      "facing": -70
+    }
+  ]
+}
