@@ -257,4 +257,6 @@ O segundo comando regenera os SVGs de referência depois de uma mudança visual 
 - A mão aberta e a saia são as partes mais simples do desenho.
 - Sem balões de fala.
 
-Fonte Inter © The Inter Project Authors, licença SIL OFL 1.1 ([assets/OFL.txt](assets/OFL.txt)).
+## Licença
+
+Código sob a [licença MIT](LICENSE). Fonte Inter © The Inter Project Authors, licença SIL OFL 1.1 ([assets/OFL.txt](assets/OFL.txt)).

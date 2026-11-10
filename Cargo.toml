@@ -2,6 +2,8 @@
 name = "flatmates"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+repository = "https://github.com/JonathanSantos/flatmates"
 description = "Gerador de ilustrações Corporate Memphis em SVG a partir de um JSON, com rig 3D e câmera única"
 
 [dependencies]
