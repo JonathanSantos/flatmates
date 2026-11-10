@@ -26,7 +26,7 @@ impl Rgb {
     }
 
     pub fn distance(self, o: Rgb) -> f64 {
-        let d = |a: u8, b: u8| (a as f64 - b as f64).powi(2);
+        let d = |a: u8, b: u8| (a as f64 - b as f64) * (a as f64 - b as f64);
         (d(self.0, o.0) + d(self.1, o.1) + d(self.2, o.2)).sqrt()
     }
 

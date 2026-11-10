@@ -2,6 +2,7 @@
 //! fim, depois de passar pela câmera.
 use crate::camera::Camera;
 use crate::color::Rgb;
+use crate::math::Det;
 use crate::math::{convex_hull, v2, V2, V3};
 use std::f64::consts::TAU;
 use std::fmt::Write;
@@ -135,7 +136,7 @@ impl Prim {
             for k in 0..8 {
                 let a = TAU * k as f64 / 8.0;
                 // Octógono circunscrito: nunca fica menor que o disco.
-                pts.push(v2(v.x + r * 1.083 * a.cos(), v.y + r * 1.083 * a.sin()));
+                pts.push(v2(v.x + r * 1.083 * a.dcos(), v.y + r * 1.083 * a.dsin()));
             }
         };
         for s in &self.shapes {
@@ -231,7 +232,7 @@ pub fn hull_path(discs: &[(V2, f64)]) -> String {
         }
         for k in 0..ARC_STEPS {
             let a = TAU * k as f64 / ARC_STEPS as f64;
-            pts.push(v2(c.x + r * a.cos(), c.y + r * a.sin()));
+            pts.push(v2(c.x + r * a.dcos(), c.y + r * a.dsin()));
             owner.push(i);
         }
     }
@@ -322,21 +323,21 @@ pub fn blob_path(pts: &[V2]) -> String {
 /// preenchimento é par-ímpar (disco com furo).
 pub fn cap_outline(a: V3, alpha: f64) -> (Vec<Vec<V2>>, bool) {
     const N: usize = 72;
-    let (sa, ca) = alpha.sin_cos();
+    let (sa, ca) = alpha.dsin_cos();
     let helper = if a.y.abs() < 0.9 { V3 { x: 0.0, y: 1.0, z: 0.0 } } else { V3 { x: 1.0, y: 0.0, z: 0.0 } };
     let e1 = a.cross(helper).norm();
     let e2 = a.cross(e1);
     let ring: Vec<V3> = (0..N)
         .map(|i| {
             let f = TAU * i as f64 / N as f64;
-            a * ca + (e1 * f.cos() + e2 * f.sin()) * sa
+            a * ca + (e1 * f.dcos() + e2 * f.dsin()) * sa
         })
         .collect();
     let disc = || -> Vec<V2> {
         (0..N)
             .map(|i| {
                 let f = TAU * i as f64 / N as f64;
-                v2(f.cos(), f.sin())
+                v2(f.dcos(), f.dsin())
             })
             .collect()
     };
@@ -352,7 +353,7 @@ pub fn cap_outline(a: V3, alpha: f64) -> (Vec<Vec<V2>>, bool) {
     let on_rim = |hidden: V3, shown: V3| -> V2 {
         let t = hidden.z / (hidden.z - shown.z);
         let p = hidden.lerp(shown, t);
-        let l = p.x.hypot(p.y).max(1e-9);
+        let l = p.x.dhypot(p.y).max(1e-9);
         v2(p.x / l, p.y / l)
     };
     let mut out: Vec<V2> = vec![on_rim(ring[(start + N - 1) % N], ring[start])];
@@ -365,15 +366,15 @@ pub fn cap_outline(a: V3, alpha: f64) -> (Vec<Vec<V2>>, bool) {
     out.push(exit);
     // Fecha pela silhueta, do ponto de saída de volta ao de entrada, pelo
     // lado que pertence à calota.
-    let (t0, t1) = (exit.y.atan2(exit.x), out[0].y.atan2(out[0].x));
+    let (t0, t1) = (exit.y.datan2(exit.x), out[0].y.datan2(out[0].x));
     let ccw = (t1 - t0).rem_euclid(TAU);
     let mid = t0 + ccw / 2.0;
-    let inside = a.x * mid.cos() + a.y * mid.sin() >= ca;
+    let inside = a.x * mid.dcos() + a.y * mid.dsin() >= ca;
     let span = if inside { ccw } else { ccw - TAU };
     let steps = ((span.abs() / 0.09).ceil() as usize).max(1);
     for k in 1..steps {
         let t = t0 + span * k as f64 / steps as f64;
-        out.push(v2(t.cos(), t.sin()));
+        out.push(v2(t.dcos(), t.dsin()));
     }
     (vec![out], false)
 }

@@ -2,7 +2,7 @@
 use flatmates::camera::{Camera, PRESETS};
 use flatmates::color::Style;
 use flatmates::scene::Scene;
-use flatmates::{flipbook, frames, parse, raster, render, scene, Options, EXAMPLES};
+use flatmates::{flipbook, frames, parse, raster, render, render_steady, scene, Options, EXAMPLES};
 use resvg::tiny_skia::Pixmap;
 
 const PLAIN: &str = r#""haze":false,"backdrop":{"blob":false,"shapes":false,"confetti":false,"ground":false}"#;
@@ -417,4 +417,15 @@ fn fitted_clothes_show_the_waist_and_loose_clothes_hide_it() {
     };
     let (slim, regular, broad) = (width("slim"), width("regular"), width("broad"));
     assert!(slim < regular && regular < broad, "larguras {slim} {regular} {broad}");
+}
+
+/// O quadro estável (usado pelo navegador) mantém o fundo parado e muda a figura.
+#[test]
+fn steady_frames_keep_the_backdrop_still() {
+    let json = example("walk");
+    let at = |time: f64| render_steady(json, &Options { time, ..Options::default() }, 8).unwrap().svg;
+    let head = |s: &str| s[..s.find("<g opacity").unwrap()].to_string();
+    let (a, b) = (at(0.0), at(0.3));
+    assert_eq!(head(&a), head(&b));
+    assert_ne!(a, b);
 }

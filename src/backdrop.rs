@@ -1,6 +1,7 @@
 //! Vinheta Memphis em volta do grupo: blobs, formas geométricas e confete.
 //! Tudo aqui é 2D, em pixels, e fica atrás da cena.
 use crate::color::{Rgb, Style, Theme};
+use crate::math::Det;
 use crate::math::{v2, V2};
 use crate::prim::{blob_path, num};
 use crate::rng::Rng;
@@ -23,7 +24,7 @@ fn blob(c: V2, rx: f64, ry: f64, rng: &mut Rng) -> String {
         .map(|i| {
             let a = turn + TAU * i as f64 / n as f64 + rng.range(-0.12, 0.12);
             let k = rng.range(0.88, 1.06);
-            v2(c.x + rx * k * a.cos(), c.y + ry * k * a.sin())
+            v2(c.x + rx * k * a.dcos(), c.y + ry * k * a.dsin())
         })
         .collect();
     blob_path(&pts)

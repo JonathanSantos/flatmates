@@ -5,6 +5,7 @@ pub mod head;
 pub mod motion;
 pub mod pose;
 
+use crate::math::Det;
 use crate::math::{two_bone, v3, UP, V3};
 use pose::{Grip, Pose};
 
@@ -143,7 +144,7 @@ pub fn solve(d: &Dims, pose: &Pose, place: &Placement, reach: [Option<V3>; 2]) -
         // A coxa (com a folga da calça) apoia em cima do assento, sem afundar nele.
         Some(h) => h + d.r_thigh + 0.012 * s,
         // O quadril inclinado sobe um lado: desce o conjunto para a perna desse lado alcançar o chão.
-        None => d.hip_height() - pose.crouch * s + lift_all - d.hip_half * pose.hip.to_radians().sin().abs(),
+        None => d.hip_height() - pose.crouch * s + lift_all - d.hip_half * pose.hip.to_radians().dsin().abs(),
     };
     let pelvis = v3(0.0, pelvis_y, 0.0);
     // Coluna em dois trechos: a curva lateral e parte da inclinação mudam no meio.
@@ -170,8 +171,8 @@ pub fn solve(d: &Dims, pose: &Pose, place: &Placement, reach: [Option<V3>; 2]) -
         hip[i] = pelvis + hip_axis * (sign * d.hip_half);
         let flat = v3(0.0, 0.0, 1.0).rot_y(sign * 0.14);
         let p = goal.pitch.to_radians();
-        let f = flat * p.cos() - UP * p.sin();
-        let u = UP * p.cos() + flat * p.sin();
+        let f = flat * p.dcos() - UP * p.dsin();
+        let u = UP * p.dcos() + flat * p.dsin();
         let lowest = [SOLE_BACK, SOLE_FRONT].iter().map(|&(z, y)| (f * z + u * y).y * s - SOLE_R * s).fold(f64::MAX, f64::min);
         // Assento alto: os pés ficam pendurados na altura em que a canela
         // desce reta, em vez de puxar a coxa para baixo até o chão.
@@ -200,7 +201,7 @@ pub fn solve(d: &Dims, pose: &Pose, place: &Placement, reach: [Option<V3>; 2]) -
         wrist[i] = arm.end;
     }
 
-    let upright = 1.6 * lean.cos().powi(2);
+    let upright = 1.6 * lean.dcos() * lean.dcos();
     let head_axis = (spine + UP * upright).norm();
     let head = chest + head_axis * (d.neck + d.head_r);
     let (hy, hp) = (pose.head_yaw.to_radians(), pose.head_pitch.to_radians());

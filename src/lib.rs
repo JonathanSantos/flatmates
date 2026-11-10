@@ -294,7 +294,9 @@ fn paint(mut st: Stage, pj: &Projector, opts: &Options, shared: Option<[f64; 4]>
     let (near, far) = item_depth.iter().fold((f64::MIN, f64::MAX), |(n, f), d| (n.max(*d), f.min(*d)));
     if st.spec.haze.unwrap_or(true) && near - far > 1.2 {
         for (info, depth) in st.scene.items.iter().zip(&item_depth) {
-            let fade = ((near - depth) / (near - far)).powf(1.3) * 0.16;
+            let t = (near - depth) / (near - far);
+            // t elevado a 1,25 só com raízes, que são exatas em qualquer plataforma.
+            let fade = t * t.sqrt().sqrt() * 0.16;
             for prim in &mut st.scene.prims[info.prims.clone()] {
                 for shape in &mut prim.shapes {
                     shape.fill = shape.fill.mix(st.th.bg, fade);
@@ -448,6 +450,28 @@ pub fn render(json: &str, opts: &Options) -> Result<Output, String> {
     let st = Stage::build(parse(json)?, opts)?;
     let pj = st.projector(st.bounds());
     let p = paint(st, &pj, opts, None);
+    Ok(Output { svg: format!("{}{}{}", p.open, p.body, p.close), warnings: p.warnings, explain: p.explain })
+}
+
+/// Um quadro de animação com enquadramento estável: a caixa da cena é a
+/// união de `samples` instantes do ciclo, então a imagem não treme quando
+/// chamada quadro a quadro (é o que o navegador usa para animar ao vivo).
+pub fn render_steady(json: &str, opts: &Options, samples: usize) -> Result<Output, String> {
+    let spec = parse(json)?;
+    let n = samples.clamp(1, 24);
+    let mut bb = EMPTY;
+    let mut ground = Vec::new();
+    for k in 0..n {
+        let st = Stage::build(spec.clone(), &Options { time: k as f64 / n as f64, ..*opts })?;
+        bb = merge(bb, st.bounds());
+        if k == 0 {
+            ground = st.scene.ground;
+        }
+    }
+    let mut st = Stage::build(spec, opts)?;
+    st.scene.ground = ground;
+    let pj = st.projector(bb);
+    let p = paint(st, &pj, opts, Some(bb));
     Ok(Output { svg: format!("{}{}{}", p.open, p.body, p.close), warnings: p.warnings, explain: p.explain })
 }
 

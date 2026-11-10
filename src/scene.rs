@@ -6,6 +6,7 @@ use crate::color::{self, Rgb, Style, INK};
 use crate::figure::draw::{self, Look};
 use crate::figure::pose::{self, Grip, Pose};
 use crate::figure::{self, motion, Dims, Placement, Rig, SOLE_BACK};
+use crate::math::Det;
 use crate::math::{v3, V3};
 use crate::prim::Prim;
 use crate::props::{self, Xf};
@@ -48,7 +49,7 @@ fn ellipse(c: V3, rx: f64, rz: f64, yaw: f64) -> Vec<V3> {
     (0..96)
         .map(|i| {
             let a = TAU * i as f64 / 96.0;
-            v3(c.x, 0.0, c.z) + v3(rx * a.cos(), 0.0, rz * a.sin()).rot_y(yaw)
+            v3(c.x, 0.0, c.z) + v3(rx * a.dcos(), 0.0, rz * a.dsin()).rot_y(yaw)
         })
         .collect()
 }
@@ -115,7 +116,7 @@ fn seated_version(p: Pose) -> Pose {
 
 /// Ângulo (radianos) para olhar de `from` para `to` no plano do chão.
 fn heading(from: V3, to: V3) -> f64 {
-    (to.x - from.x).atan2(to.z - from.z)
+    (to.x - from.x).datan2(to.z - from.z)
 }
 
 pub fn build(spec: &Spec, cam: &Camera, style: &Style, time: f64) -> Result<Scene, String> {
@@ -381,8 +382,8 @@ pub fn build(spec: &Spec, cam: &Camera, style: &Style, time: f64) -> Result<Scen
 
         if let Some(target) = it.look_at.as_deref().and_then(find).and_then(|t| focus[t]) {
             let d = to_local(target) - to_local(focus[i].unwrap_or(place.pos));
-            p.head_yaw = d.x.atan2(d.z).to_degrees().clamp(-75.0, 75.0);
-            p.head_pitch = (-d.y).atan2(d.x.hypot(d.z)).to_degrees().clamp(-35.0, 35.0);
+            p.head_yaw = d.x.datan2(d.z).to_degrees().clamp(-75.0, 75.0);
+            p.head_pitch = (-d.y).datan2(d.x.dhypot(d.z)).to_degrees().clamp(-35.0, 35.0);
         }
 
         let mut reach = [None, None];

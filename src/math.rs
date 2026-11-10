@@ -1,5 +1,108 @@
 //! Vetores, fecho convexo e cinemática inversa de dois ossos.
+use std::f64::consts::{FRAC_2_PI, FRAC_PI_2, FRAC_PI_4, PI};
 use std::ops::{Add, Mul, Neg, Sub};
+
+/// Trigonometria determinística. `sin`, `cos` e `atan2` da biblioteca
+/// padrão vêm da libm de cada sistema e podem diferir no último bit entre
+/// macOS, Linux e Windows; isso bastava para trocar um desempate de ordem
+/// e mudar o SVG. Aqui só entram soma, produto, divisão e raiz, que o IEEE
+/// 754 define bit a bit, então a mesma cena dá os mesmos bytes em qualquer
+/// plataforma.
+pub trait Det {
+    fn dsin(self) -> f64;
+    fn dcos(self) -> f64;
+    fn dsin_cos(self) -> (f64, f64);
+    fn datan2(self, x: f64) -> f64;
+    fn dhypot(self, other: f64) -> f64;
+}
+
+/// Reduz o ângulo a [-π/4, π/4] e diz em que quadrante ele estava.
+fn reduce(x: f64) -> (f64, i64) {
+    const HI: f64 = FRAC_PI_2;
+    const LO: f64 = 6.123233995736766e-17;
+    let k = (x * FRAC_2_PI).round();
+    ((x - k * HI) - k * LO, (k as i64).rem_euclid(4))
+}
+
+fn sin_poly(r: f64) -> f64 {
+    let r2 = r * r;
+    let mut acc = 0.0;
+    // Série de Taylor em Horner, até r^17.
+    for n in (1..=8).rev() {
+        acc = (1.0 - acc) * r2 / ((2 * n) as f64 * (2 * n + 1) as f64);
+    }
+    r * (1.0 - acc)
+}
+
+fn cos_poly(r: f64) -> f64 {
+    let r2 = r * r;
+    let mut acc = 0.0;
+    for n in (1..=9).rev() {
+        acc = (1.0 - acc) * r2 / ((2 * n - 1) as f64 * (2 * n) as f64);
+    }
+    1.0 - acc
+}
+
+/// Arco tangente para |z| <= 1.
+fn atan_unit(z: f64) -> f64 {
+    // tan(π/8): acima disso, gira π/4 para a série convergir rápido.
+    let (t, base) = if z.abs() > 0.414_213_562_373_095_05 {
+        let s = if z >= 0.0 { 1.0 } else { -1.0 };
+        ((z.abs() - 1.0) / (z.abs() + 1.0) * s, FRAC_PI_4 * s)
+    } else {
+        (z, 0.0)
+    };
+    let t2 = t * t;
+    let mut acc = 0.0;
+    for n in (0..24).rev() {
+        acc = 1.0 / (2 * n + 1) as f64 - t2 * acc;
+    }
+    base + t * acc
+}
+
+impl Det for f64 {
+    fn dsin(self) -> f64 {
+        self.dsin_cos().0
+    }
+    fn dcos(self) -> f64 {
+        self.dsin_cos().1
+    }
+    fn dsin_cos(self) -> (f64, f64) {
+        let (r, quadrant) = reduce(self);
+        let (s, c) = (sin_poly(r), cos_poly(r));
+        match quadrant {
+            0 => (s, c),
+            1 => (c, -s),
+            2 => (-s, -c),
+            _ => (-c, s),
+        }
+    }
+    fn datan2(self, x: f64) -> f64 {
+        let y = self;
+        if x == 0.0 && y == 0.0 {
+            return 0.0;
+        }
+        if y.abs() <= x.abs() {
+            let a = atan_unit(y / x);
+            return if x > 0.0 {
+                a
+            } else if y >= 0.0 {
+                a + PI
+            } else {
+                a - PI
+            };
+        }
+        let a = atan_unit(x / y);
+        if y > 0.0 {
+            FRAC_PI_2 - a
+        } else {
+            -FRAC_PI_2 - a
+        }
+    }
+    fn dhypot(self, other: f64) -> f64 {
+        (self * self + other * other).sqrt()
+    }
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub struct V2 {
@@ -13,7 +116,7 @@ pub const fn v2(x: f64, y: f64) -> V2 {
 
 impl V2 {
     pub fn len(self) -> f64 {
-        self.x.hypot(self.y)
+        self.x.dhypot(self.y)
     }
 }
 
@@ -71,17 +174,17 @@ impl V3 {
     }
     /// Gira em torno do eixo Y: o vetor +Z vai para +X quando o ângulo cresce.
     pub fn rot_y(self, a: f64) -> V3 {
-        let (s, c) = a.sin_cos();
+        let (s, c) = a.dsin_cos();
         v3(self.x * c + self.z * s, self.y, -self.x * s + self.z * c)
     }
     /// Gira em torno do eixo X: o vetor +Y vai para +Z quando o ângulo cresce.
     pub fn rot_x(self, a: f64) -> V3 {
-        let (s, c) = a.sin_cos();
+        let (s, c) = a.dsin_cos();
         v3(self.x, self.y * c - self.z * s, self.y * s + self.z * c)
     }
     /// Gira em torno do eixo Z: o vetor +Y vai para +X quando o ângulo cresce.
     pub fn rot_z(self, a: f64) -> V3 {
-        let (s, c) = a.sin_cos();
+        let (s, c) = a.dsin_cos();
         v3(self.x * c + self.y * s, -self.x * s + self.y * c, self.z)
     }
 }
@@ -168,6 +271,19 @@ pub fn two_bone(root: V3, target: V3, a: f64, b: f64, pole: V3) -> Ik {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn deterministic_trig_matches_the_standard_library() {
+        for k in -400..=400 {
+            let x = k as f64 * 0.0371;
+            assert!((x.dsin() - x.sin()).abs() < 1e-13, "sin({x})");
+            assert!((x.dcos() - x.cos()).abs() < 1e-13, "cos({x})");
+        }
+        for (y, x) in [(0.3, 1.0), (1.0, 0.3), (-0.7, 0.2), (0.5, -2.0), (-0.5, -2.0), (1.0, 0.0), (-1.0, 0.0), (0.0, -1.0), (2.0, 2.0)] {
+            assert!((y.datan2(x) - f64::atan2(y, x)).abs() < 1e-13, "atan2({y}, {x})");
+        }
+        assert_eq!(3.0.dhypot(4.0), 5.0);
+    }
 
     #[test]
     fn hull_of_square_with_inner_point_has_four_corners() {

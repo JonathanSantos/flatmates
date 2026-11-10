@@ -2,6 +2,7 @@
 //! animais usam as mesmas esferas varridas do corpo dos personagens.
 use crate::camera::Camera;
 use crate::color::{self, Rgb, Style, GREY, INK, LEAF, LEAF_DARK, LEAF_LIGHT, PAPER, SLATE, WHITE, WOOD};
+use crate::math::Det;
 use crate::math::{v3, UP, V3};
 use crate::prim::{Geom, Prim, Shape};
 use crate::rng::Rng;
@@ -84,7 +85,7 @@ pub fn cylinder(out: &mut Vec<Prim>, cam: &Camera, m: &dyn Fn(V3) -> V3, base: V
         (0..N)
             .map(|i| {
                 let a = TAU * i as f64 / N as f64;
-                m(base + v3(r * a.cos(), y, r * a.sin()))
+                m(base + v3(r * a.dcos(), y, r * a.dsin()))
             })
             .collect()
     };
@@ -115,7 +116,7 @@ pub fn content(kind: &str, o: V3, u: V3, v: V3, accent: Rgb) -> Vec<Shape> {
         let pts: Vec<V3> = (0..24)
             .map(|i| {
                 let t = TAU * i as f64 / 24.0;
-                p(a, b) + un * (rad * t.cos()) + vn * (rad * t.sin())
+                p(a, b) + un * (rad * t.dcos()) + vn * (rad * t.dsin())
             })
             .collect();
         Shape::poly(&pts, 0.0, c)
@@ -167,7 +168,11 @@ fn blade(base: V3, out_dir: V3, len: f64, lean: f64, width: f64, color: Rgb) -> 
         .map(|i| {
             let t = i as f64 / (N - 1) as f64;
             let p = base + UP * (len * (t - 0.22 * lean * t * t)) + out_dir * (len * lean * t * t);
-            (p, width * (std::f64::consts::PI * (0.08 + 0.92 * t)).sin().max(0.0).powf(0.75) + 0.003)
+            {
+                // seno elevado a 0,75 só com raízes.
+                let bulge = (std::f64::consts::PI * (0.08 + 0.92 * t)).dsin().max(0.0);
+                (p, width * bulge.sqrt() * bulge.sqrt().sqrt() + 0.003)
+            }
         })
         .collect();
     let key = [pts[2].0, pts[N / 2].0, pts[N - 2].0];
@@ -343,7 +348,7 @@ pub fn build(kind: &str, xf: Xf, cam: &Camera, style: &Style, color: Option<Rgb>
                 let logo: Vec<V3> = (0..16)
                     .map(|i| {
                         let t = TAU * i as f64 / 16.0;
-                        lid(v3(0.022 * t.cos(), 0.12 + 0.022 * t.sin(), -0.0065))
+                        lid(v3(0.022 * t.dcos(), 0.12 + 0.022 * t.dsin(), -0.0065))
                     })
                     .collect();
                 back.shapes.push(Shape::poly(&logo, 0.0, WHITE));
@@ -376,7 +381,7 @@ pub fn build(kind: &str, xf: Xf, cam: &Camera, style: &Style, color: Option<Rgb>
             let greens = [LEAF, LEAF_DARK, LEAF_LIGHT];
             for i in 0..9 {
                 let a = i as f64 * 2.399 + rng.range(-0.2, 0.2);
-                let dir = v3(a.cos(), 0.0, a.sin());
+                let dir = v3(a.dcos(), 0.0, a.dsin());
                 let len = rng.range(0.55, 0.95) * k;
                 let lean = rng.range(0.18, 0.62);
                 out.push(blade(xf.at(dir.x * 0.05, 0.22, dir.z * 0.05), dir.rot_y(xf.yaw), len, lean, 0.055 * k, greens[i % 3]));
@@ -388,7 +393,7 @@ pub fn build(kind: &str, xf: Xf, cam: &Camera, style: &Style, color: Option<Rgb>
             let greens = [LEAF, LEAF_DARK, LEAF_LIGHT];
             for i in 0..6 {
                 let a = i as f64 * 2.399 + rng.range(-0.25, 0.25);
-                let dir = v3(a.cos(), 0.0, a.sin()).rot_y(xf.yaw);
+                let dir = v3(a.dcos(), 0.0, a.dsin()).rot_y(xf.yaw);
                 let reach = rng.range(0.16, 0.42) * k;
                 let height = (0.55 + 0.16 * (i % 3) as f64 + rng.range(-0.05, 0.05)) * k;
                 let base = xf.at(0.0, 0.22, 0.0);
@@ -423,8 +428,8 @@ pub fn build(kind: &str, xf: Xf, cam: &Camera, style: &Style, color: Option<Rgb>
         "card" => {
             let (w, h) = (0.66 * k, 0.42 * k);
             let roll = rng.range(-0.10, 0.10);
-            let right = (cam.right() * roll.cos() + cam.up() * roll.sin()) * w;
-            let down = (cam.right() * roll.sin() - cam.up() * roll.cos()) * h;
+            let right = (cam.right() * roll.dcos() + cam.up() * roll.dsin()) * w;
+            let down = (cam.right() * roll.dsin() - cam.up() * roll.dcos()) * h;
             let o = xf.pos - right * 0.5 - down * 0.5;
             let rad = 0.035 * k;
             let rect = |o: V3| {

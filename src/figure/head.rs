@@ -5,6 +5,7 @@ use super::draw::Look;
 use super::{Rig, SIGN};
 use crate::camera::Camera;
 use crate::color::{Rgb, INK, WHITE};
+use crate::math::Det;
 use crate::math::V3;
 use crate::prim::{Prim, Shape};
 
@@ -116,7 +117,7 @@ pub fn draw(rig: &Rig, look: &Look, cam: &Camera) -> Vec<Prim> {
         let band: Vec<V3> = (0..=8)
             .map(|k| {
                 let t = std::f64::consts::PI * k as f64 / 8.0;
-                c + (side * t.cos() + u * t.sin()) * (r * 1.15)
+                c + (side * t.dcos() + u * t.dsin()) * (r * 1.15)
             })
             .collect();
         shapes.push(Shape::curve(&band, 0.022 * s, true, INK));
@@ -129,7 +130,7 @@ pub fn draw(rig: &Rig, look: &Look, cam: &Camera) -> Vec<Prim> {
 
     if seen(f) > 0.25 && look.face != "none" {
         let on_face = |yaw: f64, pitch: f64| {
-            let dir = f * (yaw.cos() * pitch.cos()) + side * (yaw.sin() * pitch.cos()) + u * pitch.sin();
+            let dir = f * (yaw.dcos() * pitch.dcos()) + side * (yaw.dsin() * pitch.dcos()) + u * pitch.dsin();
             c + dir * (r * 1.005)
         };
         // Cada olho só aparece se a parte do rosto onde ele fica estiver à vista.

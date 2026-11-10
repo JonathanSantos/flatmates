@@ -217,9 +217,7 @@ pub fn order(items: &[SortItem]) -> (Vec<usize>, Vec<usize>) {
     let mut stuck: Vec<usize> = Vec::new();
     for _ in 0..n {
         let farthest = |free_only: bool| {
-            (0..n)
-                .filter(|&i| !done[i] && (!free_only || pending[i] == 0))
-                .min_by(|&a, &b| items[a].depth.total_cmp(&items[b].depth).then(a.cmp(&b)))
+            (0..n).filter(|&i| !done[i] && (!free_only || pending[i] == 0)).min_by_key(|&i| ((items[i].depth * 1e6).round() as i64, i))
         };
         let pick = match farthest(true) {
             Some(p) => p,
