@@ -38,10 +38,15 @@ pub fn draw(rig: &Rig, look: &Look, cam: &Camera) -> Vec<Prim> {
         shapes.push(neck);
         // Esfera do crânio mais o queixo: a cabeça vira um oval que aponta
         // para a frente, em vez de uma bola sem direção.
-        // Mandíbula larga (dá o oval de frente) e queixo adiantado (deixa o
-        // rosto de pé no perfil, em vez de apontar para cima).
-        shapes.push(Shape::hull(
-            &[(c, r), (at(0.16, -0.36, 0.0), r * 0.78), (at(0.50, -0.62, 0.0), r * 0.44), (at(1.0, -0.12, 0.0), 0.027 * s)],
+        // Crânio e mandíbula num fecho; nariz e queixo em fechos próprios.
+        // A união deixa as reentrâncias do perfil (testa, nariz, boca,
+        // queixo), que um fecho só apagaria numa cunha reta.
+        shapes.push(Shape::union(
+            vec![
+                vec![(c, r), (at(0.14, -0.36, 0.0), r * 0.78), (at(0.34, -0.60, 0.0), r * 0.46)],
+                vec![(at(0.74, 0.16, 0.0), r * 0.16), (at(1.02, -0.13, 0.0), r * 0.17), (at(0.80, -0.22, 0.0), r * 0.14)],
+                vec![(at(0.40, -0.52, 0.0), r * 0.40), (at(0.60, -0.70, 0.0), r * 0.26)],
+            ],
             skin,
         ));
     }
@@ -142,40 +147,55 @@ pub fn draw(rig: &Rig, look: &Look, cam: &Camera) -> Vec<Prim> {
         };
         // Cada olho só aparece se a parte do rosto onde ele fica estiver à vista.
         for sg in SIGN {
-            let eye = on_face(sg * 0.40, 0.02);
+            let eye = on_face(sg * 0.50, 0.03);
             if seen(eye - c) > 0.12 * r {
                 shapes.push(Shape::hull(&[(eye, 0.011 * s)], INK));
             }
         }
         if look.accessories.iter().any(|a| a == "glasses") {
-            // Aro em volta de cada olho à vista, e a ponte quando os dois aparecem.
-            let mut shown = 0;
-            for sg in SIGN {
-                let eye = on_face(sg * 0.40, 0.02);
-                if seen(eye - c) <= 0.12 * r {
-                    continue;
+            // Armação rígida e plana, um pouco à frente do rosto. Como é um
+            // objeto só, as duas lentes giram juntas: em três-quartos viram
+            // duas elipses, e de perfil quase uma linha com a haste.
+            let lens_r = 0.21 * r;
+            let lens = |sg: f64| c + f * (r * 0.89) + side * (sg * 0.45 * r) + u * (0.03 * r);
+            if seen(f) > 0.12 {
+                for sg in SIGN {
+                    let ring: Vec<V3> = (0..=20)
+                        .map(|k| {
+                            let t = std::f64::consts::TAU * k as f64 / 20.0;
+                            lens(sg) + side * (lens_r * t.dcos()) + u * (lens_r * t.dsin())
+                        })
+                        .collect();
+                    shapes.push(Shape::poly(&ring, 0.0, WHITE).alpha(0.28));
+                    shapes.push(Shape::curve(&ring, 0.011 * s, true, INK));
                 }
-                shown += 1;
-                let ring: Vec<V3> = (0..=16)
-                    .map(|k| {
-                        let t = std::f64::consts::TAU * k as f64 / 16.0;
-                        on_face(sg * 0.40 + 0.22 * t.dcos(), 0.02 + 0.21 * t.dsin())
-                    })
-                    .collect();
-                shapes.push(Shape::poly(&ring, 0.0, crate::color::WHITE).alpha(0.32));
-                shapes.push(Shape::curve(&ring, 0.012 * s, true, INK));
+                let bridge = [lens(1.0) - side * lens_r, c + f * (r * 0.95) + u * (0.07 * r), lens(-1.0) + side * lens_r];
+                shapes.push(Shape::curve(&bridge, 0.011 * s, true, INK));
+            } else {
+                // De perfil: a lente de lado é um traço curto.
+                let sg = if seen(side) > 0.0 { 1.0 } else { -1.0 };
+                shapes.push(Shape::curve(&[lens(sg) + u * lens_r, lens(sg) - u * lens_r], 0.014 * s, false, INK));
             }
-            if shown == 2 {
-                shapes.push(Shape::curve(&[on_face(-0.18, 0.04), on_face(0.0, 0.07), on_face(0.18, 0.04)], 0.012 * s, true, INK));
+            for sg in SIGN {
+                if seen(side * sg) > 0.3 {
+                    let hinge = lens(sg) + side * (sg * lens_r);
+                    shapes.push(Shape::curve(&[hinge, at(0.05, 0.05, sg * 1.0)], 0.010 * s, false, INK));
+                }
             }
         }
         if look.face == "smile" && !look.beard {
             for sg in SIGN {
-                let cheek = on_face(sg * 0.66, -0.26);
+                let cheek = on_face(sg * 0.78, -0.24);
                 if seen(cheek - c) > 0.30 * r {
                     shapes.push(Shape::hull(&[(cheek, 0.019 * s)], skin.mix(Rgb::hex(0xff5c5c), 0.30)));
                 }
             }
+        }
+        if look.face == "smile" && !look.beard && seen(f) <= 0.6 {
+            // De lado sobra meio sorriso, do canto da boca até a frente do rosto.
+            let sg = if seen(side) > 0.0 { 1.0 } else { -1.0 };
+            let arc: Vec<V3> = (0..=4).map(|k| on_face(sg * (0.66 - 0.10 * k as f64), -0.36 - 0.025 * k as f64)).collect();
+            shapes.push(Shape::curve(&arc, 0.011 * s, true, INK));
         }
         if look.face == "smile" && seen(f) > 0.6 {
             let arc: Vec<V3> = (-3..=3).map(|k| on_face(k as f64 * 0.11, -0.44 + 0.006 * (k * k) as f64 * 3.0)).collect();

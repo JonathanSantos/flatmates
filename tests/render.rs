@@ -401,8 +401,9 @@ fn fitted_clothes_show_the_waist_and_loose_clothes_hide_it() {
         // Só o tronco: abaixo dos braços erguidos (mangas têm a mesma cor).
         let body = &rows[n * 45 / 100..];
         let m = body.len();
-        let waist = *body[m * 15 / 100..m * 55 / 100].iter().min().unwrap() as f64;
-        let hip = *body[m * 60 / 100..].iter().max().unwrap() as f64;
+        // A janela para antes do bolso do moletom, que tem outra cor.
+        let waist = *body[m * 15 / 100..m * 50 / 100].iter().min().unwrap() as f64;
+        let hip = *body[m * 78 / 100..].iter().max().unwrap() as f64;
         waist / hip
     };
     let (tank, hoodie) = (torso("curvy", "tank"), torso("curvy", "hoodie"));

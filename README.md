@@ -156,7 +156,9 @@ Técnicas que não mudam o que a cena diz, só como ela lê:
 - **Sombra tonal:** uma faixa mais escura no lado direito das formas grandes, recortada pela própria forma.
 - **Três tons nos membros:** o de lá escurece, o de cá clareia. Um braço na frente do tronco da mesma cor continua legível.
 - **Névoa de profundidade:** o que está longe puxa de leve para a cor do fundo.
-- **Cabeça com queixo:** crânio mais mandíbula, para o rosto ter direção de perfil; franja, brilho no cabelo do lado da luz, bochechas no sorriso.
+- **Perfil com relevo:** crânio, nariz e queixo são fechos separados unidos, então sobram as reentrâncias do perfil; de lado aparecem um olho e meio sorriso. Franja, brilho no cabelo do lado da luz, bochechas no sorriso.
+- **Saia com caimento:** a barra é uma roda de gomos que desce e sobe, com pregas do lado da câmera; numa passada larga o pano fica entre as pernas em vez de esticar até as duas.
+- **Óculos como objeto:** armação plana e rígida na frente do rosto, que gira inteira com a cabeça.
 - **Detalhes de roupa:** cadarço, sola, punhos e barra canelados, queda dos ombros, estampas (`pattern`: listras ou bolinhas) alinhadas entre tronco e manga.
 - **Silhueta contínua:** o tronco é uma sequência de fechos entre estações interpoladas por uma curva suave, do ombro ao quadril.
 - **Enquadramento automático:** a cena é ajustada à área útil e a vinheta (blobs, formas, confete) é montada em volta do grupo, fora do título.
@@ -261,7 +263,7 @@ O segundo comando regenera os SVGs de referência depois de uma mudança visual 
 - Só projeção ortográfica, de propósito: é o que o estilo pede e o que mantém tudo coerente.
 - Peças que realmente se atravessam geram aviso; a ordem ali é uma aproximação. Sentar é coberto por uma varredura de 960 combinações (assento, altura, pose, roupa, câmera) sem nenhum aviso.
 - A animação é uma troca de quadros, não interpolação de caminhos: o arquivo cresce com o número de quadros.
-- A mão aberta e a saia são as partes mais simples do desenho.
+- A mão aberta é a parte mais simples do desenho.
 
 ## Licença
 

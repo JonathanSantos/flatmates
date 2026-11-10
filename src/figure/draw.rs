@@ -4,7 +4,7 @@ use super::pose::Grip;
 use super::{Rig, SIGN, SOLE_BACK, SOLE_FRONT, SOLE_R};
 use crate::camera::Camera;
 use crate::color::{Rgb, INK, WHITE};
-use crate::math::V3;
+use crate::math::{Det, V3};
 use crate::prim::{Pattern, Prim, Shape};
 
 pub const OUTFITS: [&str; 7] = ["tshirt", "shirt", "hoodie", "sweater", "blazer", "tank", "dress"];
@@ -338,16 +338,18 @@ pub fn draw(rig: &Rig, look: &Look, cam: &Camera, shading: bool) -> Vec<Prim> {
     // Barra reta: cantos pequenos em volta do quadril, em vez de um fundo redondo.
     for sg in SIGN {
         hip_part.push((hem_mid + rig.side * (sg * (d.hip_half + hip_r - corner)), corner));
-        hip_part.push((hem_mid + rig.fwd * (sg * (hip_r + 0.012 * s - corner)), corner));
+        // Na frente a barra acompanha a barriga; atrás fica rente ao corpo.
+        let reach = if sg > 0.0 { hip_r + 0.012 * s } else { hip_r * 0.80 };
+        hip_part.push((hem_mid + rig.fwd * (sg * (reach - corner)), corner));
     }
     let hip_part: Vec<(V3, f64)> = hip_part.into_iter().map(rest).collect();
     let band: Vec<(V3, f64)> =
-        hip_part[3..].iter().flat_map(|&(c, r)| [(c - rig.spine * (0.004 * s), r), (c + rig.spine * (0.03 * s), r)]).collect();
+        hip_part[3..].iter().flat_map(|&(c, r)| [(c - rig.spine * (0.002 * s), r), (c + rig.spine * (0.016 * s), r)]).collect();
     parts.push(hip_part.clone());
     let print = look.pattern.map(|p| (p, look.top_color.mix(WHITE, 0.62)));
     let mut torso = vec![Shape::union(parts, look.top_color).patterned(print).shaded(shading)];
     if o.ribbed {
-        torso.push(Shape::hull(&band, look.top_color.mix(INK, 0.13)));
+        torso.push(Shape::hull(&band, look.top_color.mix(INK, 0.10)));
     }
     let facing = cam.view(rig.fwd).z;
     if facing > 0.5 {
@@ -378,23 +380,49 @@ pub fn draw(rig: &Rig, look: &Look, cam: &Camera, shading: bool) -> Vec<Prim> {
     if bottom == "skirt" {
         let t = o.skirt.unwrap_or(0.62);
         let color = if dress { look.top_color } else { look.bottom_color };
-        let hem_at = |i: usize| rig.hip[i].lerp(rig.knee[i], t) + rig.side * (SIGN[i] * 0.02 * s);
+        let thigh_at = |i: usize| rig.hip[i].lerp(rig.knee[i], t);
+        let center = thigh_at(0).lerp(thigh_at(1), 0.5);
+        // O pano não estica até as duas pernas numa passada larga: a barra
+        // fica entre elas e a perna sai por baixo.
+        let hem_at = |i: usize| thigh_at(i).lerp(center, 0.32) + rig.side * (SIGN[i] * 0.02 * s);
         let waist = rig.spine * (0.03 * s);
         let key = [rig.hip[0], rig.hip[1], hem_at(0), hem_at(1)];
-        // Barra reta que acompanha as pernas: cantos pequenos em volta das coxas.
         let mid = hem_at(0).lerp(hem_at(1), 0.5);
-        let across = (hem_at(0) - hem_at(1)) * 0.5;
+        let half = (hem_at(0) - hem_at(1)) * 0.5;
+        let wide = if half.len() > 1e-6 { half.norm() } else { rig.side };
         let drop = (mid - rig.pelvis).norm();
-        let depth_axis = across.cross(drop).norm();
-        let flare = d.r_thigh + 0.055 * s;
-        let corner = 0.02 * s;
-        let mut discs = vec![(rig.hip[0] + waist, d.r_hip + loose), (rig.hip[1] + waist, d.r_hip + loose)];
-        for sg in SIGN {
-            discs.push((mid + across * sg + across.norm() * (sg * (flare - corner)), corner));
-            discs.push((mid + depth_axis * (sg * (flare - corner)), corner));
+        let deep = wide.cross(drop).norm();
+        let flare = d.r_thigh + 0.062 * s;
+        let (rx, rz) = (half.len() + flare, flare);
+        let top = [(rig.hip[0] + waist, d.r_hip + loose), (rig.hip[1] + waist, d.r_hip + loose)];
+        // Barra ondulada: gomos em volta da elipse da barra, um mais baixo,
+        // outro mais alto. Cada gomo é um fecho da cintura até a barra, e a
+        // união deles dá o recorte que uma placa reta não tem.
+        const GORES: usize = 12;
+        let lobe = 0.046 * s;
+        let rim = |k: usize| {
+            let a = std::f64::consts::TAU * (k as f64 + 0.5) / GORES as f64;
+            let dip = if k.is_multiple_of(2) { 0.014 * s } else { 0.0 };
+            mid + wide * ((rx - lobe) * a.dcos()) + deep * ((rz - lobe) * a.dsin()) + drop * dip
+        };
+        let mut gores: Vec<Vec<(V3, f64)>> = vec![vec![top[0], top[1], (mid + wide * (rx - lobe), lobe), (mid - wide * (rx - lobe), lobe)]];
+        for k in 0..GORES {
+            gores.push(vec![top[0], top[1], (rim(k), lobe)]);
         }
-        let shape = Shape::hull(&discs, color).patterned(if dress { print } else { None }).shaded(shading);
-        out.push(Prim::blob(vec![shape], &key, 0.10));
+        let mut shapes = vec![Shape::union(gores, color).patterned(if dress { print } else { None }).shaded(shading)];
+        // Pregas: um traço mais escuro entre gomos, só do lado virado para a câmera.
+        let fold = color.mix(INK, 0.11);
+        for k in (1..GORES).step_by(2) {
+            let a = std::f64::consts::TAU * k as f64 / GORES as f64;
+            let dir = wide * a.dcos() + deep * a.dsin();
+            if cam.view(dir).z < 0.35 {
+                continue;
+            }
+            let foot = mid + wide * (rx * 0.93 * a.dcos()) + deep * (rz * 0.93 * a.dsin());
+            let from = rig.pelvis.lerp(foot, 0.42);
+            shapes.push(Shape::curve(&[from, foot], 0.009 * s, false, fold));
+        }
+        out.push(Prim::blob(shapes, &key, 0.10));
     }
 
     if o.hood {
